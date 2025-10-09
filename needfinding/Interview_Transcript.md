@@ -79,7 +79,7 @@ As long as it doesn’t involve any of my personal or private information, I’d
 **Interviewee:**  
 I think a perfect interaction would be one that doesn’t invade my personal privacy but greatly helps with my daily academic and work activities. It would help me plan my schedule, remind me to submit assignments, and summarize parts of my work — for example, pointing out areas in my assignments that might need improvement. That kind of support would be ideal for me. Otherwise, I don’t think there would be any major issues.
 
-# 🎙️ User Interview Transcript – Participant 3
+# User Interview Transcript – Participant 3
 
 
 ### Question 1
