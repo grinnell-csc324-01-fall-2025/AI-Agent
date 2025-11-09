@@ -1,0 +1,40 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Dashboard</title>
+  <style>
+    body{font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;padding:24px;}
+    .card{border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px;}
+    h1{margin-top:0;}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px;}
+  </style>
+</head>
+<body>
+  <h1>AI Dashboard (Demo)</h1>
+  <div class="card">
+    <h3>Tasks</h3>
+    <ul id="tasks"></ul>
+    <button id="fetchTasks">Extract tasks from text (demo)</button>
+  </div>
+  <div class="card">
+    <h3>Messages / Files (Placeholder)</h3>
+    <p>Backend endpoints <code>/api/messages</code> and <code>/api/files</code> should be wired to Microsoft Graph.</p>
+  </div>
+  <script type="module">
+    const btn = document.getElementById("fetchTasks");
+    const list = document.getElementById("tasks");
+    btn.onclick = async () => {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ text: "Finish lab report by Friday; Submit HW1 link; Prepare slides for Monday" })
+      });
+      const data = await res.json();
+      list.innerHTML = (data.items || []).map(t => `<li>${t.title} ${t.due?`(due ${t.due})`:""}</li>`).join("");
+    };
+  </script>
+</body>
+</html>

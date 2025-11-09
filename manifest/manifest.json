@@ -1,0 +1,56 @@
+
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "0.1.0",
+  "id": "YOUR-GUID-HERE",
+  "packageName": "com.example.teams.aiagent",
+  "name": { "short": "AI Teams Agent", "full": "AI Assistant for Microsoft Teams" },
+  "description": {
+    "short": "Summarize, extract tasks, and open files via Graph.",
+    "full": "A Teams app with a Tab, Bot, and Message Extension to summarize content, extract tasks, and open files via Microsoft Graph."
+  },
+  "developer": {
+    "name": "Your Team",
+    "websiteUrl": "https://localhost:3978",
+    "privacyUrl": "https://localhost:3978/privacy",
+    "termsOfUseUrl": "https://localhost:3978/terms"
+  },
+  "icons": { "color": "color.png", "outline": "outline.png" },
+  "accentColor": "#6264A7",
+  "bots": [{
+    "botId": "YOUR-APP-ID",
+    "scopes": ["personal", "team", "groupchat"],
+    "supportsFiles": false,
+    "isNotificationOnly": false,
+    "commandLists": [{
+      "scopes": ["personal", "team", "groupchat"],
+      "commands": [
+        { "title": "help", "description": "Show available commands" },
+        { "title": "summarize", "description": "Summarize selected content" },
+        { "title": "create task", "description": "Extract tasks and schedule" }
+      ]
+    }]
+  }],
+  "composeExtensions": [{
+    "botId": "YOUR-APP-ID",
+    "commands": [{
+      "id": "summarize",
+      "title": "Summarize",
+      "description": "Summarize message or file",
+      "context": ["message", "compose"],
+      "parameters": [{ "name": "query", "title": "Prompt", "description": "Optional instruction", "inputType": "text" }]
+    }]
+  }],
+  "staticTabs": [{
+    "entityId": "personalTab",
+    "name": "AI Dashboard",
+    "contentUrl": "https://localhost:3978/tabs/personal/index.html",
+    "scopes": ["personal"]
+  }],
+  "permissions": ["identity", "messageTeamMembers"],
+  "webApplicationInfo": {
+    "id": "YOUR-APP-ID",
+    "resource": "api://YOUR-APP-ID"
+  }
+}
