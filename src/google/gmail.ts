@@ -1,4 +1,4 @@
-import {google} from 'googleapis';
+import {gmail_v1, google} from 'googleapis';
 import {oauth2Client} from './client.js';
 
 export async function listMessages() {
@@ -25,7 +25,7 @@ export async function listMessages() {
 
   return results
     .filter(
-      (r): r is PromiseFulfilledResult<any> =>
+      (r): r is PromiseFulfilledResult<gmail_v1.Schema$Message> =>
         r.status === 'fulfilled' && r.value !== null,
     )
     .map(r => r.value);
