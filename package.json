@@ -10,18 +10,16 @@
     "zip:manifest": "cd manifest && zip -r ../ai-teams-agent.zip ."
   },
   "dependencies": {
-    "@microsoft/microsoft-graph-client": "^3.0.7",
-    "botbuilder": "^4.22.2",
-    "express": "^4.19.2",
-    "isomorphic-fetch": "^3.0.0",
-    "msal": "^1.4.17",
-    "msal-node": "^2.6.5",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "cors": "^2.8.5"
+    "express": "^4.19.2",
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^166.0.0",
+    "isomorphic-fetch": "^3.0.0"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
+    "@types/express": "^4.17.21",
     "tsx": "^4.19.1",
-    "@types/express": "^4.17.21"
+    "typescript": "^5.6.3"
   }
 }

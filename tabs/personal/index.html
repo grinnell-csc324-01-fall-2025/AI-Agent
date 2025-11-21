@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="background-orb orb-1"></div>
+    <div class="background-orb orb-2"></div>
+
+    <div class="glass-container">
+        <header class="glass-header">
+            <div class="logo">AI Agent</div>
+            <nav>
+                <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+                <button class="nav-btn" data-tab="drive">Drive</button>
+                <button class="nav-btn" data-tab="gmail">Gmail</button>
+            </nav>
+            <div class="user-profile">
+                <div class="avatar"></div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view active">
+                <div class="welcome-card glass-card">
+                    <h1>Welcome back.</h1>
+                    <p>Your digital workspace is ready.</p>
+                </div>
+
+                <div class="grid-container">
+                    <div class="glass-card widget">
+                        <h2>Recent Files</h2>
+                        <div id="dashboard-files" class="list-container">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                    <div class="glass-card widget">
+                        <h2>Recent Messages</h2>
+                        <div id="dashboard-messages" class="list-container">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Drive View -->
+            <section id="drive-view" class="view">
+                <div class="glass-card full-height">
+                    <div class="card-header">
+                        <h2>Google Drive</h2>
+                        <button class="icon-btn refresh-btn">↻</button>
+                    </div>
+                    <div id="drive-list" class="list-container"></div>
+                </div>
+            </section>
+
+            <!-- Gmail View -->
+            <section id="gmail-view" class="view">
+                <div class="glass-card full-height">
+                    <div class="card-header">
+                        <h2>Gmail</h2>
+                        <button class="icon-btn refresh-btn">↻</button>
+                    </div>
+                    <div id="gmail-list" class="list-container"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="client.js"></script>
+</body>
+
+</html>
