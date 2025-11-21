@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,10 +10,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="background-orb orb-1"></div>
     <div class="background-orb orb-2"></div>
-    
+
     <div class="glass-container">
         <header class="glass-header">
             <div class="logo">AI Agent</div>
@@ -33,7 +35,7 @@
                     <h1>Welcome back.</h1>
                     <p>Your digital workspace is ready.</p>
                 </div>
-                
+
                 <div class="grid-container">
                     <div class="glass-card widget">
                         <h2>Recent Files</h2>
@@ -55,7 +57,7 @@
                 <div class="glass-card full-height">
                     <div class="card-header">
                         <h2>Google Drive</h2>
-                        <button class="icon-btn refresh-btn" onclick="loadDrive()">↻</button>
+                        <button class="icon-btn refresh-btn">↻</button>
                     </div>
                     <div id="drive-list" class="list-container"></div>
                 </div>
@@ -66,7 +68,7 @@
                 <div class="glass-card full-height">
                     <div class="card-header">
                         <h2>Gmail</h2>
-                        <button class="icon-btn refresh-btn" onclick="loadGmail()">↻</button>
+                        <button class="icon-btn refresh-btn">↻</button>
                     </div>
                     <div id="gmail-list" class="list-container"></div>
                 </div>
@@ -76,4 +78,5 @@
 
     <script src="client.js"></script>
 </body>
+
 </html>

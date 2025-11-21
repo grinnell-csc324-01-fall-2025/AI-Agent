@@ -9,15 +9,21 @@ export async function listMessages() {
     });
 
     const messages = res.data.messages || [];
-    const details = await Promise.all(
+
+    // Use Promise.allSettled to handle partial failures
+    const results = await Promise.allSettled(
         messages.map(async (msg) => {
+            if (!msg.id) return null;
             const m = await gmail.users.messages.get({
                 userId: "me",
-                id: msg.id!
+                id: msg.id,
+                format: "full" // Get full details in one go if possible, though list() doesn't support it, get() does.
             });
             return m.data;
         })
     );
 
-    return details;
+    return results
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled' && r.value !== null)
+        .map(r => r.value);
 }

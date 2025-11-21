@@ -10,7 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3978'],
+    credentials: true
+}));
 app.use(express.json());
 
 // Serve static assets for the personal tab
