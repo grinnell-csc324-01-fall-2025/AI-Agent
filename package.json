@@ -3,23 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/server.ts",
-    "lint": "eslint .",
-    "zip:manifest": "cd manifest && zip -r ../ai-teams-agent.zip ."
+    "lint": "gts lint",
+    "zip:manifest": "cd manifest && zip -r ../ai-teams-agent.zip .",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "google-auth-library": "^10.5.0",
+    "google-auth-library": "9.10.0",
     "googleapis": "^166.0.0",
     "isomorphic-fetch": "^3.0.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.5",
     "@types/express": "^4.17.21",
+    "@types/node": "^22.7.5",
+    "gtoken": "^5.0.0",
+    "gts": "^6.0.2",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "undici": "^6.19.0"
+  },
+  "overrides": {
+    "google-auth-library": "9.10.0"
   }
 }
