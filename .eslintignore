@@ -2,3 +2,4 @@ build/
 dist/
 tabs/
 package-lock.json
+jest.config.js

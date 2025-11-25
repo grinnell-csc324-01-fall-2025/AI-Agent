@@ -2,6 +2,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * MongoDB connection configuration.
+ * Loads settings from environment variables with sensible defaults.
+ */
 export const dbConfig = {
   uri: process.env.MONGODB_URI || 'mongodb://localhost:27017',
   dbName: process.env.MONGODB_DB_NAME || 'ai-agent-db',
@@ -24,6 +28,11 @@ export const dbConfig = {
   },
 };
 
+/**
+ * Validates database configuration.
+ * Ensures URI and database name are set with correct format.
+ * @throws Error if configuration is invalid
+ */
 export function validateDbConfig(): void {
   if (!dbConfig.uri) {
     throw new Error('MONGODB_URI environment variable is required');
