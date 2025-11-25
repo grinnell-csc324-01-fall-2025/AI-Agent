@@ -1,9 +1,10 @@
 import cors from 'cors';
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { router as apiRouter } from './api/router.js';
-import { authRouter } from './auth/authRouter.js';
+import {fileURLToPath} from 'url';
+import {router as apiRouter} from './api/router.js';
+import {authRouter} from './auth/authRouter.js';
+import {connect as connectToDatabase} from './db/connection.js';
 import './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,8 +50,8 @@ async function startServer() {
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-startServer();
+void startServer();
