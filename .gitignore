@@ -5,6 +5,3 @@ build
 *.zip
 .DS_Store
 .vscode
-Plan.md
-docs/Storage_Layer_PRs.md
-.gitignore
