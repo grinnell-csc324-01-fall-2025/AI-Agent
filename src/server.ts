@@ -30,8 +30,10 @@ app.use(
 app.use('/auth', authRouter);
 app.use('/api', apiRouter);
 
-app.get('/', (_, res) =>
-  res.send('AI Teams Agent is running (Google Suite Edition)'),
+app.get(
+  '/',
+  (_req: import('express').Request, res: import('express').Response) =>
+    res.send('AI Teams Agent is running (Google Suite Agent)'),
 );
 
 const port = process.env.PORT || 3978;
