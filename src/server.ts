@@ -4,6 +4,7 @@ import path from 'path';
 import {fileURLToPath} from 'url';
 import {router as apiRouter} from './api/router.js';
 import {authRouter} from './auth/authRouter.js';
+import {connect as connectToDatabase} from './db/connection.js';
 import './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,4 +38,20 @@ app.get(
 );
 
 const port = process.env.PORT || 3978;
-app.listen(port, () => console.log(`✔ Server listening on :${port}`));
+
+async function startServer() {
+  try {
+    console.log('Initializing database connection...');
+    await connectToDatabase();
+
+    app.listen(port, () => {
+      console.log(`Server listening on port ${port}`);
+      console.log(`Health check: http://localhost:${port}/api/health/db`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    throw error;
+  }
+}
+
+void startServer();
