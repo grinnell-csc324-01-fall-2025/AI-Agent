@@ -5,7 +5,7 @@ import {dbConfig, validateDbConfig} from './config.js';
  * Singleton class managing MongoDB database connections.
  * Provides connection pooling, automatic retry logic, and lifecycle management.
  */
-class DatabaseConnection {
+export class DatabaseConnection {
   private static instance: DatabaseConnection;
   private client: MongoClient | null = null;
   private db: Db | null = null;
