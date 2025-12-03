@@ -7,7 +7,7 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc || (echo 'TypeScript errors found:' && tsc --noEmit 2>&1 && exit 1)",
     "dev": "tsx src/start.ts",
     "start": "node build/start.js",
     "lint": "gts lint",
