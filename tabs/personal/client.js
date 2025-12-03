@@ -51,12 +51,14 @@ async function checkAuth() {
         });
         
         if (!res.ok) {
+            updateUserMenu(false);
             return null;
         }
         
         const data = await res.json();
         
         if (!data.authenticated) {
+            updateUserMenu(false);
             return null;
         }
         
@@ -72,10 +74,42 @@ async function checkAuth() {
             }
         }
         
+        updateUserMenu(true);
         return data.user;
     } catch (e) {
         console.error('Error checking auth:', e);
+        updateUserMenu(false);
         return null;
+    }
+}
+
+// Update user menu based on authentication status
+function updateUserMenu(isAuthenticated) {
+    const signInBtn = document.getElementById('sign-in-btn');
+    const signOutBtn = document.getElementById('sign-out-btn');
+    
+    if (isAuthenticated) {
+        signInBtn.style.display = 'none';
+        signOutBtn.style.display = 'block';
+    } else {
+        signInBtn.style.display = 'block';
+        signOutBtn.style.display = 'none';
+    }
+}
+
+// Toggle user menu
+function toggleUserMenu() {
+    const menu = document.getElementById('user-menu');
+    menu.classList.toggle('show');
+}
+
+// Close user menu when clicking outside
+function closeUserMenu(event) {
+    const menu = document.getElementById('user-menu');
+    const avatar = document.getElementById('avatar-btn');
+    
+    if (menu && avatar && !menu.contains(event.target) && !avatar.contains(event.target)) {
+        menu.classList.remove('show');
     }
 }
 
@@ -220,6 +254,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         // User is not authenticated - show sign-in prompt
         showSignInPrompt();
     }
+
+    // Avatar click handler
+    const avatarBtn = document.getElementById('avatar-btn');
+    if (avatarBtn) {
+        avatarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleUserMenu();
+        });
+    }
+
+    // Sign in button handler
+    const signInBtn = document.getElementById('sign-in-btn');
+    if (signInBtn) {
+        signInBtn.addEventListener('click', () => {
+            window.location.href = '/auth/signin';
+        });
+    }
+
+    // Sign out button handler
+    const signOutBtn = document.getElementById('sign-out-btn');
+    if (signOutBtn) {
+        signOutBtn.addEventListener('click', () => {
+            // Navigate to signout endpoint - server will handle redirect
+            window.location.href = '/auth/signout';
+        });
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', closeUserMenu);
 
     // Bind refresh buttons
     document.querySelectorAll('.refresh-btn').forEach(btn => {
