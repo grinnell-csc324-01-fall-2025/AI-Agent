@@ -2,12 +2,12 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { router as apiRouter } from './api/router.js';
-import { authRouter } from './auth/authRouter.js';
-import { config } from './config.js';
-import { connect as connectToDatabase } from './db/connection.js';
-import { UserRepository } from './db/repositories/UserRepository.js';
+import {fileURLToPath} from 'url';
+import {router as apiRouter} from './api/router.js';
+import {authRouter} from './auth/authRouter.js';
+import {config} from './config.js';
+import {connect as connectToDatabase} from './db/connection.js';
+import {UserRepository} from './db/repositories/UserRepository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,9 +29,9 @@ app.use(
 );
 
 // CORS configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || [
-  'http://localhost:3978',
-];
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin =>
+  origin.trim(),
+) || ['http://localhost:3978'];
 
 app.use(
   cors({
@@ -40,7 +40,7 @@ app.use(
       if (!origin) {
         return callback(null, true);
       }
-      
+
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -61,7 +61,7 @@ app.use(express.json());
 app.use((req, res, next) => {
   const startTime = Date.now();
   const timestamp = new Date().toISOString();
-  
+
   console.log(`[${timestamp}] ${req.method} ${req.path}`, {
     ip: req.ip,
     userAgent: req.get('user-agent'),
@@ -72,7 +72,9 @@ app.use((req, res, next) => {
   // Log response when finished
   res.on('finish', () => {
     const duration = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} ${res.statusCode} (${duration}ms)`);
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.path} ${res.statusCode} (${duration}ms)`,
+    );
   });
 
   next();
@@ -88,14 +90,18 @@ app.use(
 app.use('/auth', authRouter);
 app.use('/api', apiRouter);
 
-app.get('/', (_req: import('express').Request, res: import('express').Response) =>
-  res.redirect('/tabs/personal/index.html'),
+app.get(
+  '/',
+  (_req: import('express').Request, res: import('express').Response) =>
+    res.redirect('/tabs/personal/index.html'),
 );
 
 // 404 handler for unknown routes
 app.use((req, res) => {
-  const isApiRequest = req.path.startsWith('/api/') || req.get('Accept')?.includes('application/json');
-  
+  const isApiRequest =
+    req.path.startsWith('/api/') ||
+    req.get('Accept')?.includes('application/json');
+
   if (isApiRequest) {
     res.status(404).json({
       error: 'Not Found',
@@ -109,35 +115,48 @@ app.use((req, res) => {
 });
 
 // Global error handler middleware (must be last)
-app.use((err: any, req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
-  const isApiRequest = req.path.startsWith('/api/') || req.get('Accept')?.includes('application/json');
-  
-  const errorDetails = {
-    errorType: err?.constructor?.name || typeof err,
-    message: err?.message || 'Internal Server Error',
-    code: err?.code,
-    status: err?.status || err?.statusCode || 500,
-    path: req.path,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-    stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined,
-  };
+app.use(
+  (
+    err: any,
+    req: import('express').Request,
+    res: import('express').Response,
+    next: import('express').NextFunction,
+  ) => {
+    const isApiRequest =
+      req.path.startsWith('/api/') ||
+      req.get('Accept')?.includes('application/json');
 
-  console.error(`[Server] [${new Date().toISOString()}] Unhandled error:`, errorDetails);
-  console.error('[Server] Full error:', err);
-
-  const statusCode = err?.status || err?.statusCode || 500;
-  
-  if (isApiRequest) {
-    res.status(statusCode).json({
-      error: err?.message || 'Internal Server Error',
-      details: process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+    const errorDetails = {
+      errorType: err?.constructor?.name || typeof err,
+      message: err?.message || 'Internal Server Error',
+      code: err?.code,
+      status: err?.status || err?.statusCode || 500,
+      path: req.path,
+      method: req.method,
       timestamp: new Date().toISOString(),
-    });
-  } else {
-    res.status(statusCode).send(err?.message || 'Internal Server Error');
-  }
-});
+      stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined,
+    };
+
+    console.error(
+      `[Server] [${new Date().toISOString()}] Unhandled error:`,
+      errorDetails,
+    );
+    console.error('[Server] Full error:', err);
+
+    const statusCode = err?.status || err?.statusCode || 500;
+
+    if (isApiRequest) {
+      res.status(statusCode).json({
+        error: err?.message || 'Internal Server Error',
+        details:
+          process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      res.status(statusCode).send(err?.message || 'Internal Server Error');
+    }
+  },
+);
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
@@ -147,10 +166,10 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     promise: promise.toString(),
     timestamp: new Date().toISOString(),
   };
-  
+
   console.error('[Server] Unhandled Promise Rejection:', errorDetails);
   console.error('[Server] Full rejection:', reason);
-  
+
   // Don't exit the process in production, but log the error
   if (process.env.NODE_ENV === 'production') {
     // In production, you might want to send this to an error tracking service
@@ -166,11 +185,12 @@ process.on('uncaughtException', (error: Error) => {
     name: error.name,
     timestamp: new Date().toISOString(),
   };
-  
+
   console.error('[Server] Uncaught Exception:', errorDetails);
   console.error('[Server] Full error:', error);
-  
+
   // Exit the process after logging (let process manager restart it)
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1);
 });
 

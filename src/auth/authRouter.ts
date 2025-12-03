@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { config } from '../config.js';
-import { GoogleTokens } from '../db/models/User.js';
-import { UserRepository } from '../db/repositories/UserRepository.js';
-import { getAuthUrl, getTokens } from '../google/client.js';
+import {Router} from 'express';
+import {config} from '../config.js';
+import {GoogleTokens} from '../db/models/User.js';
+import {UserRepository} from '../db/repositories/UserRepository.js';
+import {getAuthUrl, getTokens} from '../google/client.js';
 
 export const authRouter = Router();
 
@@ -54,11 +54,16 @@ authRouter.get('/callback', async (req, res) => {
 
     // Ensure we have an access token
     if (!tokens.access_token) {
-      console.error('Token response structure:', JSON.stringify(tokens, null, 2));
+      console.error(
+        'Token response structure:',
+        JSON.stringify(tokens, null, 2),
+      );
       throw new Error('No access token received from Google');
     }
 
-    let profile: {email: string; id: string; name: string; picture?: string} | undefined;
+    let profile:
+      | {email: string; id: string; name: string; picture?: string}
+      | undefined;
 
     // Try to get user info from ID token first (if available)
     // ID token contains user info and doesn't require an API call
@@ -73,14 +78,14 @@ authRouter.get('/callback', async (req, res) => {
           const payload = JSON.parse(
             Buffer.from(idTokenParts[1], 'base64url').toString('utf-8'),
           );
-          
+
           console.log('Decoded ID token payload:', {
             email: payload.email,
             sub: payload.sub,
             name: payload.name,
             picture: payload.picture,
           });
-          
+
           // Use the ID token payload for user info
           if (payload.email && payload.sub && payload.name) {
             profile = {
@@ -97,7 +102,10 @@ authRouter.get('/callback', async (req, res) => {
           throw new Error('Invalid ID token format');
         }
       } catch (idTokenError) {
-        console.error('Error decoding ID token, falling back to API call:', idTokenError);
+        console.error(
+          'Error decoding ID token, falling back to API call:',
+          idTokenError,
+        );
         // Fall through to API call method below
         profile = undefined;
       }
@@ -105,22 +113,24 @@ authRouter.get('/callback', async (req, res) => {
 
     // If we don't have profile from ID token, fetch it via API
     if (!profile) {
-      console.log('Fetching user info via API (ID token not available or failed)...');
+      console.log(
+        'Fetching user info via API (ID token not available or failed)...',
+      );
 
       // Create a completely fresh OAuth2 client with the tokens
       // This ensures we have a clean client instance
       const {google} = await import('googleapis');
-      
+
       const userInfoClient = new google.auth.OAuth2(
         config.google.clientId,
         config.google.clientSecret,
         config.google.redirectUri,
       );
-      
+
       // Set credentials with the tokens we just received
       // The tokens object from getToken() should have the correct structure
       userInfoClient.setCredentials(tokens);
-      
+
       // Verify the credentials were set correctly
       const setCreds = userInfoClient.credentials;
       console.log('Fresh OAuth client credentials:', {
@@ -129,14 +139,21 @@ authRouter.get('/callback', async (req, res) => {
         tokenType: setCreds?.token_type,
         hasExpiry: !!setCreds?.expiry_date,
       });
-      
+
       // Use googleapis library's oauth2.userinfo.get() method
-      console.log('Fetching user info using googleapis oauth2.userinfo.get()...');
+      console.log(
+        'Fetching user info using googleapis oauth2.userinfo.get()...',
+      );
       const oauth2 = google.oauth2({version: 'v2', auth: userInfoClient});
-      
+
       const profileResponse = await oauth2.userinfo.get();
-      profile = profileResponse.data as {email: string; id: string; name: string; picture?: string};
-      
+      profile = profileResponse.data as {
+        email: string;
+        id: string;
+        name: string;
+        picture?: string;
+      };
+
       console.log('Successfully fetched user profile via API:', {
         email: profile.email,
         id: profile.id,
@@ -160,12 +177,12 @@ authRouter.get('/callback', async (req, res) => {
       expiryDate = tokens.expiry_date;
     } else if ((tokens as any).expires_in) {
       // expires_in is in seconds, convert to milliseconds timestamp
-      expiryDate = Date.now() + ((tokens as any).expires_in * 1000);
+      expiryDate = Date.now() + (tokens as any).expires_in * 1000;
     } else {
       // Default to 1 hour if neither is provided
       expiryDate = Date.now() + 3600 * 1000;
     }
-    
+
     const googleTokens: GoogleTokens = {
       access_token: tokens.access_token || '',
       refresh_token: tokens.refresh_token || '',
@@ -200,7 +217,7 @@ authRouter.get('/callback', async (req, res) => {
 // Sign out endpoint
 authRouter.get('/signout', (req, res) => {
   if (req.session) {
-    req.session.destroy((err) => {
+    req.session.destroy(err => {
       if (err) {
         console.error('Error destroying session:', err);
         res.status(500).json({ok: false, error: 'Failed to sign out'});

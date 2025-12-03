@@ -69,9 +69,11 @@ export async function requireAuth(
       try {
         const userRepo = UserRepository.getInstance();
         const user = await userRepo.findById(userId);
-        
+
         if (!user) {
-          console.warn(`[Auth Middleware] User not found in database: ${userId}`);
+          console.warn(
+            `[Auth Middleware] User not found in database: ${userId}`,
+          );
           req.session.destroy(() => {});
           const isApiRequest =
             req.path.startsWith('/api/') ||
@@ -87,7 +89,10 @@ export async function requireAuth(
         }
       } catch (dbError) {
         // If database lookup fails, log but don't block (might be transient)
-        console.error('[Auth Middleware] Error verifying user in database:', dbError);
+        console.error(
+          '[Auth Middleware] Error verifying user in database:',
+          dbError,
+        );
         // Continue with the request - the API endpoints will handle database errors
       }
     }
@@ -102,11 +107,12 @@ export async function requireAuth(
       req.get('Accept')?.includes('application/json');
 
     if (isApiRequest) {
-      res.status(500).json({error: 'Internal server error during authentication'});
+      res
+        .status(500)
+        .json({error: 'Internal server error during authentication'});
       return;
     }
 
     res.redirect('/auth/signin');
   }
 }
-

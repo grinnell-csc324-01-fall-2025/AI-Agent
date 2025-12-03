@@ -31,7 +31,9 @@ export class UserRepository extends BaseRepository<User> {
   private validateObjectId(id: string | ObjectId): void {
     if (typeof id === 'string') {
       if (id.length !== 24) {
-        throw new Error(`Invalid ObjectId format: ${id} (expected 24 characters)`);
+        throw new Error(
+          `Invalid ObjectId format: ${id} (expected 24 characters)`,
+        );
       }
       if (!ObjectId.isValid(id)) {
         throw new Error(`Invalid ObjectId: ${id}`);
@@ -50,7 +52,9 @@ export class UserRepository extends BaseRepository<User> {
       console.log('[UserRepository] Indexes initialized successfully');
     } catch (error) {
       console.error('[UserRepository] Failed to initialize indexes:', error);
-      throw new Error(`Failed to initialize indexes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to initialize indexes: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -70,8 +74,13 @@ export class UserRepository extends BaseRepository<User> {
       const user = await collection.findOne({email});
       return user;
     } catch (error) {
-      console.error(`[UserRepository] Error finding user by email ${email}:`, error);
-      throw new Error(`Failed to find user by email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        `[UserRepository] Error finding user by email ${email}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to find user by email: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -85,7 +94,11 @@ export class UserRepository extends BaseRepository<User> {
     user: Omit<User, '_id' | 'createdAt' | 'updatedAt'>,
   ): Promise<WithId<User>> {
     // Validate required fields
-    if (!user.email || typeof user.email !== 'string' || !user.email.includes('@')) {
+    if (
+      !user.email ||
+      typeof user.email !== 'string' ||
+      !user.email.includes('@')
+    ) {
       throw new Error(`Invalid email address: ${user.email}`);
     }
     if (!user.googleId || typeof user.googleId !== 'string') {
@@ -97,7 +110,10 @@ export class UserRepository extends BaseRepository<User> {
     if (!user.tokens || typeof user.tokens !== 'object') {
       throw new Error('Invalid tokens: tokens object is required');
     }
-    if (!user.tokens.access_token || typeof user.tokens.access_token !== 'string') {
+    if (
+      !user.tokens.access_token ||
+      typeof user.tokens.access_token !== 'string'
+    ) {
       throw new Error('Invalid tokens: access_token is required');
     }
 
@@ -123,17 +139,28 @@ export class UserRepository extends BaseRepository<User> {
       );
 
       if (!result) {
-        throw new Error('Failed to create or update user: database returned null');
+        throw new Error(
+          'Failed to create or update user: database returned null',
+        );
       }
 
-      console.log(`[UserRepository] User ${result.email} created or updated successfully`);
+      console.log(
+        `[UserRepository] User ${result.email} created or updated successfully`,
+      );
       return result;
     } catch (error) {
-      console.error(`[UserRepository] Error creating or updating user ${user.email}:`, error);
+      console.error(
+        `[UserRepository] Error creating or updating user ${user.email}:`,
+        error,
+      );
       if (error instanceof Error && error.message.includes('E11000')) {
-        throw new Error(`User with email ${user.email} already exists (duplicate key error)`);
+        throw new Error(
+          `User with email ${user.email} already exists (duplicate key error)`,
+        );
       }
-      throw new Error(`Failed to create or update user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create or update user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -170,15 +197,24 @@ export class UserRepository extends BaseRepository<User> {
       });
 
       if (updated) {
-        console.log(`[UserRepository] Tokens updated successfully for user ${userId}`);
+        console.log(
+          `[UserRepository] Tokens updated successfully for user ${userId}`,
+        );
       } else {
-        console.warn(`[UserRepository] No user found with id ${userId} to update tokens`);
+        console.warn(
+          `[UserRepository] No user found with id ${userId} to update tokens`,
+        );
       }
 
       return updated;
     } catch (error) {
-      console.error(`[UserRepository] Error updating tokens for user ${userId}:`, error);
-      throw new Error(`Failed to update tokens: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        `[UserRepository] Error updating tokens for user ${userId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to update tokens: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -199,8 +235,13 @@ export class UserRepository extends BaseRepository<User> {
       }
       return user.tokens || null;
     } catch (error) {
-      console.error(`[UserRepository] Error getting tokens for user ${userId}:`, error);
-      throw new Error(`Failed to get tokens: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        `[UserRepository] Error getting tokens for user ${userId}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to get tokens: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -219,7 +260,9 @@ export class UserRepository extends BaseRepository<User> {
       return await super.findById(id);
     } catch (error) {
       console.error(`[UserRepository] Error finding user by id ${id}:`, error);
-      throw new Error(`Failed to find user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to find user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 }

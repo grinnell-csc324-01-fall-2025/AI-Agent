@@ -1,8 +1,8 @@
-import type { Request, Response } from 'express';
-import { Router } from 'express';
-import { config } from '../config.js';
-import { getDb, healthCheck, isConnected } from '../db/connection.js';
-import { UserRepository } from '../db/repositories/UserRepository.js';
+import type {Request, Response} from 'express';
+import {Router} from 'express';
+import {config} from '../config.js';
+import {getDb, healthCheck, isConnected} from '../db/connection.js';
+import {UserRepository} from '../db/repositories/UserRepository.js';
 
 export const router = Router();
 
@@ -20,7 +20,7 @@ router.get('/db', async (_req: Request, res: Response) => {
       const db = getDb();
       const dbName = db.databaseName;
       const adminDb = db.admin();
-      
+
       let serverInfo = {};
       try {
         const serverStatus = await adminDb.serverStatus();
@@ -54,7 +54,10 @@ router.get('/db', async (_req: Request, res: Response) => {
       status: 'unhealthy',
       database: 'error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined,
+      stack:
+        process.env.NODE_ENV === 'development' && error instanceof Error
+          ? error.stack
+          : undefined,
       timestamp: new Date().toISOString(),
     });
   }
@@ -69,7 +72,7 @@ router.get('/auth', async (req: Request, res: Response) => {
     const hasSession = !!req.session;
     const hasUserId = !!(req.session && req.session.userId);
     const isDbConnected = isConnected();
-    
+
     let userInfo = null;
     if (hasUserId && isDbConnected && req.session?.userId) {
       try {
@@ -80,8 +83,12 @@ router.get('/auth', async (req: Request, res: Response) => {
             email: user.email,
             name: user.name,
             hasTokens: !!user.tokens,
-            tokenExpiry: user.tokens?.expiry_date ? new Date(user.tokens.expiry_date).toISOString() : null,
-            tokenExpired: user.tokens?.expiry_date ? user.tokens.expiry_date < Date.now() : null,
+            tokenExpiry: user.tokens?.expiry_date
+              ? new Date(user.tokens.expiry_date).toISOString()
+              : null,
+            tokenExpired: user.tokens?.expiry_date
+              ? user.tokens.expiry_date < Date.now()
+              : null,
           };
         }
       } catch (e) {
@@ -144,7 +151,8 @@ router.get('/google', async (req: Request, res: Response) => {
           const now = Date.now();
           const expiryDate = user.tokens.expiry_date || 0;
           const isExpired = expiryDate < now;
-          const expiresIn = expiryDate > now ? Math.round((expiryDate - now) / 1000) : 0;
+          const expiresIn =
+            expiryDate > now ? Math.round((expiryDate - now) / 1000) : 0;
 
           tokenStatus = {
             hasAccessToken: !!user.tokens.access_token,

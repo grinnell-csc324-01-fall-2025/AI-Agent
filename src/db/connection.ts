@@ -62,8 +62,14 @@ export class DatabaseConnection {
     try {
       validateDbConfig();
     } catch (configError) {
-      const errorMessage = configError instanceof Error ? configError.message : 'Invalid database configuration';
-      console.error('[Database Connection] Configuration validation failed:', errorMessage);
+      const errorMessage =
+        configError instanceof Error
+          ? configError.message
+          : 'Invalid database configuration';
+      console.error(
+        '[Database Connection] Configuration validation failed:',
+        errorMessage,
+      );
       throw new Error(`Database configuration error: ${errorMessage}`);
     }
 
@@ -77,28 +83,36 @@ export class DatabaseConnection {
         console.log(
           `[Database Connection] [${new Date().toISOString()}] Attempting to connect to MongoDB (attempt ${attemptNumber}/${maxRetries})`,
         );
-        console.log(`[Database Connection] URI: ${dbConfig.uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`); // Mask credentials
+        console.log(
+          `[Database Connection] URI: ${dbConfig.uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')}`,
+        ); // Mask credentials
         console.log(`[Database Connection] Database name: ${dbConfig.dbName}`);
 
         this.client = new MongoClient(dbConfig.uri, dbConfig.options);
-        
+
         // Set connection timeout
         const connectTimeout = dbConfig.options.connectTimeoutMS || 10000;
         const connectPromise = this.client.connect();
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error(`Connection timeout after ${connectTimeout}ms`)), connectTimeout);
+          setTimeout(
+            () =>
+              reject(new Error(`Connection timeout after ${connectTimeout}ms`)),
+            connectTimeout,
+          );
         });
-        
+
         await Promise.race([connectPromise, timeoutPromise]);
-        
+
         this.db = this.client.db(dbConfig.dbName);
-        
+
         // Verify connection with ping
         const pingStart = Date.now();
         await this.db.admin().ping();
         const pingDuration = Date.now() - pingStart;
-        
-        console.log(`[Database Connection] [${new Date().toISOString()}] Successfully connected to MongoDB`);
+
+        console.log(
+          `[Database Connection] [${new Date().toISOString()}] Successfully connected to MongoDB`,
+        );
         console.log(`[Database Connection] Database: ${dbConfig.dbName}`);
         console.log(`[Database Connection] Ping duration: ${pingDuration}ms`);
 
@@ -110,7 +124,8 @@ export class DatabaseConnection {
 
         const errorDetails = {
           attempt: retryCount,
-          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          errorType:
+            error instanceof Error ? error.constructor.name : typeof error,
           message: error instanceof Error ? error.message : String(error),
           code: (error as any)?.code,
           name: (error as any)?.name,
@@ -123,7 +138,9 @@ export class DatabaseConnection {
 
         if (retryCount < maxRetries) {
           const waitTime = Math.pow(2, retryCount) * 1000;
-          console.log(`[Database Connection] Retrying in ${waitTime / 1000}s...`);
+          console.log(
+            `[Database Connection] Retrying in ${waitTime / 1000}s...`,
+          );
           await new Promise(resolve => setTimeout(resolve, waitTime));
         } else {
           // Clean up failed connection attempt
@@ -131,7 +148,10 @@ export class DatabaseConnection {
             try {
               await this.client.close();
             } catch (closeError) {
-              console.error('[Database Connection] Error closing failed connection:', closeError);
+              console.error(
+                '[Database Connection] Error closing failed connection:',
+                closeError,
+              );
             }
             this.client = null;
           }
@@ -188,18 +208,22 @@ export class DatabaseConnection {
       const error = new Error(
         'Database not connected. Call connect() first or use getDbAsync()',
       );
-      console.error('[Database Connection] Attempted to get database when not connected');
+      console.error(
+        '[Database Connection] Attempted to get database when not connected',
+      );
       throw error;
     }
-    
+
     // Verify connection is still alive
     if (!this.client) {
-      const error = new Error('Database client is null. Connection may have been lost.');
+      const error = new Error(
+        'Database client is null. Connection may have been lost.',
+      );
       console.error('[Database Connection] Database client is null');
       this.db = null;
       throw error;
     }
-    
+
     return this.db;
   }
 
@@ -243,39 +267,49 @@ export class DatabaseConnection {
   public async healthCheck(): Promise<boolean> {
     try {
       if (!this.db) {
-        console.warn('[Database Connection] Health check failed: database instance is null');
+        console.warn(
+          '[Database Connection] Health check failed: database instance is null',
+        );
         return false;
       }
-      
+
       if (!this.client) {
-        console.warn('[Database Connection] Health check failed: client is null');
+        console.warn(
+          '[Database Connection] Health check failed: client is null',
+        );
         return false;
       }
-      
+
       const pingStart = Date.now();
       await this.db.admin().ping();
       const pingDuration = Date.now() - pingStart;
-      
+
       if (pingDuration > 1000) {
-        console.warn(`[Database Connection] Health check ping took ${pingDuration}ms (slow)`);
+        console.warn(
+          `[Database Connection] Health check ping took ${pingDuration}ms (slow)`,
+        );
       }
-      
+
       return true;
     } catch (error) {
       const errorDetails = {
-        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        errorType:
+          error instanceof Error ? error.constructor.name : typeof error,
         message: error instanceof Error ? error.message : String(error),
         code: (error as any)?.code,
       };
       console.error('[Database Connection] Health check failed:', errorDetails);
-      
+
       // Mark connection as lost
-      if (error instanceof Error && (
-        error.message.includes('connection') ||
-        error.message.includes('timeout') ||
-        (error as any)?.code === 'ECONNREFUSED'
-      )) {
-        console.warn('[Database Connection] Connection appears to be lost, clearing state');
+      if (
+        error instanceof Error &&
+        (error.message.includes('connection') ||
+          error.message.includes('timeout') ||
+          (error as any)?.code === 'ECONNREFUSED')
+      ) {
+        console.warn(
+          '[Database Connection] Connection appears to be lost, clearing state',
+        );
         this.db = null;
         if (this.client) {
           try {
@@ -286,7 +320,7 @@ export class DatabaseConnection {
           this.client = null;
         }
       }
-      
+
       return false;
     }
   }

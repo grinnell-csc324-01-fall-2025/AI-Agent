@@ -27,7 +27,9 @@ function validateConfig() {
   if (!googleClientId || googleClientId.trim().length === 0) {
     errors.push('GOOGLE_CLIENT_ID is required');
   } else if (!googleClientId.includes('.apps.googleusercontent.com')) {
-    errors.push('GOOGLE_CLIENT_ID appears to be invalid (should contain .apps.googleusercontent.com)');
+    errors.push(
+      'GOOGLE_CLIENT_ID appears to be invalid (should contain .apps.googleusercontent.com)',
+    );
   }
 
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -43,11 +45,16 @@ function validateConfig() {
   } else {
     try {
       const redirectUrl = new URL(googleRedirectUri);
-      if (redirectUrl.protocol !== 'http:' && redirectUrl.protocol !== 'https:') {
+      if (
+        redirectUrl.protocol !== 'http:' &&
+        redirectUrl.protocol !== 'https:'
+      ) {
         errors.push('GOOGLE_REDIRECT_URI must use http or https protocol');
       }
     } catch {
-      errors.push(`Invalid GOOGLE_REDIRECT_URI: ${googleRedirectUri} (must be a valid URL)`);
+      errors.push(
+        `Invalid GOOGLE_REDIRECT_URI: ${googleRedirectUri} (must be a valid URL)`,
+      );
     }
   }
 
@@ -55,32 +62,52 @@ function validateConfig() {
   const googleScopes = (
     process.env.GOOGLE_SCOPES ||
     'https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly'
-  ).split(',').map(s => s.trim()).filter(s => s.length > 0);
-  
+  )
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
   if (googleScopes.length === 0) {
     errors.push('At least one GOOGLE_SCOPES is required');
   }
-  
+
   const validScopePattern = /^https:\/\/www\.googleapis\.com\/auth\//;
-  const invalidScopes = googleScopes.filter(scope => !validScopePattern.test(scope));
+  const invalidScopes = googleScopes.filter(
+    scope => !validScopePattern.test(scope),
+  );
   if (invalidScopes.length > 0) {
-    errors.push(`Invalid Google scopes: ${invalidScopes.join(', ')} (must start with https://www.googleapis.com/auth/)`);
+    errors.push(
+      `Invalid Google scopes: ${invalidScopes.join(', ')} (must start with https://www.googleapis.com/auth/)`,
+    );
   }
 
   // Validate Session Secret
-  const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-change-in-production';
-  if (sessionSecret === 'dev-secret-change-in-production' && process.env.NODE_ENV === 'production') {
-    errors.push('SESSION_SECRET must be set in production (do not use default value)');
+  const sessionSecret =
+    process.env.SESSION_SECRET || 'dev-secret-change-in-production';
+  if (
+    sessionSecret === 'dev-secret-change-in-production' &&
+    process.env.NODE_ENV === 'production'
+  ) {
+    errors.push(
+      'SESSION_SECRET must be set in production (do not use default value)',
+    );
   } else if (sessionSecret.length < 32) {
-    errors.push('SESSION_SECRET should be at least 32 characters long for security');
+    errors.push(
+      'SESSION_SECRET should be at least 32 characters long for security',
+    );
   }
 
   // Validate MongoDB configuration (if provided)
   if (process.env.MONGODB_URI) {
     try {
       const mongoUrl = new URL(process.env.MONGODB_URI);
-      if (mongoUrl.protocol !== 'mongodb:' && mongoUrl.protocol !== 'mongodb+srv:') {
-        errors.push('MONGODB_URI must use mongodb:// or mongodb+srv:// protocol');
+      if (
+        mongoUrl.protocol !== 'mongodb:' &&
+        mongoUrl.protocol !== 'mongodb+srv:'
+      ) {
+        errors.push(
+          'MONGODB_URI must use mongodb:// or mongodb+srv:// protocol',
+        );
       }
     } catch {
       errors.push(`Invalid MONGODB_URI format: ${process.env.MONGODB_URI}`);
@@ -107,7 +134,10 @@ export const config = {
     scopes: (
       process.env.GOOGLE_SCOPES ||
       'https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly'
-    ).split(',').map(s => s.trim()).filter(s => s.length > 0),
+    )
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0),
   },
   session: {
     secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
@@ -118,7 +148,17 @@ export const config = {
 console.log('[Config] Configuration loaded successfully');
 console.log('[Config] Port:', config.port);
 console.log('[Config] Base URL:', config.baseUrl);
-console.log('[Config] Google Client ID:', config.google.clientId ? `${config.google.clientId.substring(0, 20)}...` : 'not set');
+console.log(
+  '[Config] Google Client ID:',
+  config.google.clientId
+    ? `${config.google.clientId.substring(0, 20)}...`
+    : 'not set',
+);
 console.log('[Config] Google Redirect URI:', config.google.redirectUri);
 console.log('[Config] Google Scopes:', config.google.scopes);
-console.log('[Config] Session Secret:', config.session.secret ? '***configured***' : 'using default (not recommended)');
+console.log(
+  '[Config] Session Secret:',
+  config.session.secret
+    ? '***configured***'
+    : 'using default (not recommended)',
+);
