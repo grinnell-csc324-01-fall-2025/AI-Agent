@@ -8,8 +8,8 @@
     ],
     "functions": {
         "api/index.ts": {
-            "includeFiles": "src/**,build/**,tabs/**",
-            "memory": 1024
+            "memory": 1024,
+            "maxDuration": 30
         }
     }
 }
