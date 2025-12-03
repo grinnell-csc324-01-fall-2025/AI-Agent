@@ -7,7 +7,7 @@
     ],
     "functions": {
         "api/index.ts": {
-            "includeFiles": "src/**,tabs/**"
+            "includeFiles": "src/**,build/**,tabs/**"
         }
     }
 }
