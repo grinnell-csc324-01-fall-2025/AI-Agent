@@ -14,6 +14,11 @@ const isServerless =
     process.env.VERCEL_URL ||
     process.env.AWS_LAMBDA_FUNCTION_NAME);
 
+// Determine if we're using MongoDB Atlas (mongodb+srv://)
+const isMongoAtlas = (process.env.MONGODB_URI || '').startsWith(
+  'mongodb+srv://',
+);
+
 export const dbConfig = {
   uri: process.env.MONGODB_URI || 'mongodb://localhost:27017',
   dbName: process.env.MONGODB_DB_NAME || 'ai-agent-db',
@@ -35,6 +40,17 @@ export const dbConfig = {
       10,
     ),
     retryWrites: true,
+    // TLS/SSL configuration for MongoDB Atlas
+    // For mongodb+srv:// connections, TLS is required
+    ...(isMongoAtlas && {
+      tls: true,
+      tlsAllowInvalidCertificates: false,
+      tlsAllowInvalidHostnames: false,
+      // Use system CA certificates
+      tlsCAFile: undefined,
+      // For serverless environments, use TLS 1.2+ (default)
+      tlsInsecure: false,
+    }),
   },
 };
 
