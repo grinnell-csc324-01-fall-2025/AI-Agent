@@ -15,7 +15,8 @@
       "./node_modules/@types",
       "./src/types"
     ],
-    "composite": false
+    "composite": false,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",
