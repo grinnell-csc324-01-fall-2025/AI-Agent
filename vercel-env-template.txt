@@ -1,0 +1,49 @@
+# ============================================
+# AI Agent - Vercel Environment Variables
+# Copy these into Vercel Project Settings > Environment Variables
+# ============================================
+
+# ============================================
+# MongoDB Configuration (REQUIRED)
+# ============================================
+MONGODB_URI=mongodb+srv://nickyadl13_db_user:test-1234@cluster0.q9eyv7t.mongodb.net/?retryWrites=true&w=majority
+MONGODB_DB_NAME=ai-agent-db
+
+# ============================================
+# Vercel AI Gateway (REQUIRED)
+# ============================================
+AI_GATEWAY_API_KEY=vck_8PGcUqJ2bEcIDaC2KswI0UyVyNArk6s9SiJv32WWUxmjqpFui144QFlB
+
+# ============================================
+# Google OAuth Configuration (REQUIRED)
+# Get these from: https://console.cloud.google.com/apis/credentials
+# IMPORTANT: Update GOOGLE_REDIRECT_URI with your actual Vercel URL after deployment
+# ============================================
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET_HERE
+GOOGLE_REDIRECT_URI=https://your-app-name.vercel.app/auth/callback
+GOOGLE_SCOPES=https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/userinfo.profile,openid
+
+# ============================================
+# Session Secret (REQUIRED for production)
+# Use this generated secure secret:
+# ============================================
+SESSION_SECRET=GMw59d2qrgcSWCmACU1PcjGiLz8AhmFobSMnZ+Gc9fs=
+
+# ============================================
+# Server Configuration (Optional - Vercel sets PORT automatically)
+# Update BASE_URL after you know your Vercel deployment URL
+# ============================================
+BASE_URL=https://your-app-name.vercel.app
+
+# ============================================
+# CORS Configuration (Optional)
+# Update with your actual Vercel domain after deployment
+# ============================================
+ALLOWED_ORIGINS=https://your-app-name.vercel.app
+
+# ============================================
+# Node Environment
+# ============================================
+NODE_ENV=production
+
