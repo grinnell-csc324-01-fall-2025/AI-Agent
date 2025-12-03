@@ -7,7 +7,7 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && tsc --noEmit --pretty 2>&1 && exit 1)",
+    "build": "npx tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && npx tsc --noEmit --pretty 2>&1 && exit 1)",
     "dev": "tsx src/start.ts",
     "start": "node build/start.js",
     "lint": "gts lint",
@@ -16,8 +16,8 @@
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "zip:manifest": "cd manifest && zip -r ../ai-teams-agent.zip .",
     "clean": "gts clean",
-    "compile": "tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && tsc --noEmit --pretty 2>&1 && exit 1)",
-    "check": "tsc --noEmit",
+    "compile": "npx tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && npx tsc --noEmit --pretty 2>&1 && exit 1)",
+    "check": "npx tsc --noEmit",
     "fix": "gts fix",
     "prepare": "node -e \"if (!process.env.CI && !process.env.VERCEL) require('child_process').execSync('npm run compile', {stdio: 'inherit'})\"",
     "pretest": "npm run compile",
