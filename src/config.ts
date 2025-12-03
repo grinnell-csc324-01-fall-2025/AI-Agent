@@ -114,6 +114,11 @@ function validateConfig() {
     }
   }
 
+  // Validate AI Gateway API Key
+  if (!process.env.AI_GATEWAY_API_KEY) {
+    errors.push('AI_GATEWAY_API_KEY is required for AI features');
+  }
+
   if (errors.length > 0) {
     const errorMessage = `Configuration validation failed:\n${errors.map(e => `  - ${e}`).join('\n')}\n\nPlease check your .env file and environment variables.`;
     console.error('[Config] Validation errors:', errors);
@@ -142,6 +147,7 @@ export const config = {
   session: {
     secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   },
+  aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY || '',
 };
 
 // Log configuration status (without sensitive data)

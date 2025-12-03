@@ -217,4 +217,9 @@ async function startServer() {
   }
 }
 
-void startServer();
+export {app};
+
+// Only start the server if this file is run directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  void startServer();
+}

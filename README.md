@@ -34,6 +34,9 @@ GOOGLE_SCOPES=https://www.googleapis.com/auth/drive.readonly,https://www.googlea
 # MongoDB Configuration
 MONGODB_URI=mongodb://localhost:27017
 MONGODB_DB_NAME=ai-agent-db
+
+# Vercel AI Gateway
+AI_GATEWAY_API_KEY=your_api_key_here
 ```
 
 ### Optional Variables
