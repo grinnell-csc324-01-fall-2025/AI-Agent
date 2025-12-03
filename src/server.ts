@@ -2,12 +2,12 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
-import {fileURLToPath} from 'url';
-import {router as apiRouter} from './api/router.js';
-import {authRouter} from './auth/authRouter.js';
-import {config} from './config.js';
-import {connect as connectToDatabase} from './db/connection.js';
-import {UserRepository} from './db/repositories/UserRepository.js';
+import { fileURLToPath } from 'url';
+import { router as apiRouter } from './api/router.js';
+import { authRouter } from './auth/authRouter.js';
+import { config } from './config.js';
+import { connect as connectToDatabase } from './db/connection.js';
+import { UserRepository } from './db/repositories/UserRepository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -217,4 +217,9 @@ async function startServer() {
   }
 }
 
-void startServer();
+export { app };
+
+// Only start the server if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  void startServer();
+}
