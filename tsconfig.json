@@ -1,20 +1,32 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "rootDir": ".",
+    "baseUrl": ".",
     "lib": [
       "ES2022",
       "DOM"
     ],
-    "outDir": "build",
+    "outDir": "./build",
     "module": "Node16",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node16"
+    "moduleResolution": "node16",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "composite": false,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "noEmitOnError": false
   },
   "include": [
-    "src/**/*.ts",
-    "test/**/*.ts",
-    "api/index.ts"
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "test"
   ]
 }

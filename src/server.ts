@@ -2,15 +2,11 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
-import {fileURLToPath} from 'url';
 import {router as apiRouter} from './api/router.js';
 import {authRouter} from './auth/authRouter.js';
 import {config} from './config.js';
 import {connect as connectToDatabase} from './db/connection.js';
 import {UserRepository} from './db/repositories/UserRepository.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -83,7 +79,7 @@ app.use((req, res, next) => {
 // Serve static assets for the personal tab
 app.use(
   '/tabs/personal',
-  express.static(path.join(__dirname, '../tabs/personal')),
+  express.static(path.join(process.cwd(), 'tabs/personal')),
 );
 
 // Auth + REST API
@@ -117,24 +113,47 @@ app.use((req, res) => {
 // Global error handler middleware (must be last)
 app.use(
   (
-    err: any,
+    err: unknown,
     req: import('express').Request,
     res: import('express').Response,
-    next: import('express').NextFunction,
+    _next: import('express').NextFunction,
   ) => {
     const isApiRequest =
       req.path.startsWith('/api/') ||
       req.get('Accept')?.includes('application/json');
 
+    // Type guard for error-like objects
+    const isErrorLike = (
+      e: unknown,
+    ): e is {
+      message?: string;
+      code?: unknown;
+      status?: number;
+      statusCode?: number;
+      stack?: string;
+    } => {
+      return typeof e === 'object' && e !== null;
+    };
+
+    const errorObj = isErrorLike(err) ? err : null;
+    const errorMessage =
+      errorObj?.message ||
+      (err instanceof Error ? err.message : 'Internal Server Error');
+    const errorCode = errorObj?.code;
+    const errorStatus = errorObj?.status || errorObj?.statusCode || 500;
+    const errorStack =
+      errorObj?.stack || (err instanceof Error ? err.stack : undefined);
+    const errorType = err instanceof Error ? err.constructor.name : typeof err;
+
     const errorDetails = {
-      errorType: err?.constructor?.name || typeof err,
-      message: err?.message || 'Internal Server Error',
-      code: err?.code,
-      status: err?.status || err?.statusCode || 500,
+      errorType,
+      message: errorMessage,
+      code: errorCode,
+      status: errorStatus,
       path: req.path,
       method: req.method,
       timestamp: new Date().toISOString(),
-      stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined,
+      stack: process.env.NODE_ENV === 'development' ? errorStack : undefined,
     };
 
     console.error(
@@ -143,39 +162,40 @@ app.use(
     );
     console.error('[Server] Full error:', err);
 
-    const statusCode = err?.status || err?.statusCode || 500;
-
     if (isApiRequest) {
-      res.status(statusCode).json({
-        error: err?.message || 'Internal Server Error',
+      res.status(errorStatus).json({
+        error: errorMessage,
         details:
           process.env.NODE_ENV === 'development' ? errorDetails : undefined,
         timestamp: new Date().toISOString(),
       });
     } else {
-      res.status(statusCode).send(err?.message || 'Internal Server Error');
+      res.status(errorStatus).send(errorMessage);
     }
   },
 );
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
-  const errorDetails = {
-    reason: reason instanceof Error ? reason.message : String(reason),
-    stack: reason instanceof Error ? reason.stack : undefined,
-    promise: promise.toString(),
-    timestamp: new Date().toISOString(),
-  };
+process.on(
+  'unhandledRejection',
+  (reason: unknown, promise: Promise<unknown>) => {
+    const errorDetails = {
+      reason: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : undefined,
+      promise: promise.toString(),
+      timestamp: new Date().toISOString(),
+    };
 
-  console.error('[Server] Unhandled Promise Rejection:', errorDetails);
-  console.error('[Server] Full rejection:', reason);
+    console.error('[Server] Unhandled Promise Rejection:', errorDetails);
+    console.error('[Server] Full rejection:', reason);
 
-  // Don't exit the process in production, but log the error
-  if (process.env.NODE_ENV === 'production') {
-    // In production, you might want to send this to an error tracking service
-    // For now, we'll just log it
-  }
-});
+    // Don't exit the process in production, but log the error
+    if (process.env.NODE_ENV === 'production') {
+      // In production, you might want to send this to an error tracking service
+      // For now, we'll just log it
+    }
+  },
+);
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error: Error) => {
@@ -217,9 +237,4 @@ async function startServer() {
   }
 }
 
-export {app};
-
-// Only start the server if this file is run directly
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  void startServer();
-}
+export {app, startServer};

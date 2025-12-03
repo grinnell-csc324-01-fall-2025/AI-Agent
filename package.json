@@ -7,17 +7,19 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx src/server.ts",
+    "build": "node_modules/.bin/tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && node_modules/.bin/tsc --noEmit --pretty 2>&1 && exit 1)",
+    "dev": "tsx src/start.ts",
+    "start": "node build/start.js",
     "lint": "gts lint",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "zip:manifest": "cd manifest && zip -r ../ai-teams-agent.zip .",
     "clean": "gts clean",
-    "compile": "tsc",
+    "compile": "node_modules/.bin/tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && node_modules/.bin/tsc --noEmit --pretty 2>&1 && exit 1)",
+    "check": "node_modules/.bin/tsc --noEmit",
     "fix": "gts fix",
-    "prepare": "npm run compile",
+    "prepare": "node -e \"if (!process.env.CI && !process.env.VERCEL) require('child_process').execSync('npm run compile', {stdio: 'inherit'})\"",
     "pretest": "npm run compile",
     "posttest": "npm run lint"
   },
@@ -47,7 +49,7 @@
     "mongodb-memory-server": "^10.3.0",
     "ts-jest": "^29.4.5",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3",
+    "typescript": "5.9.3",
     "undici": "^6.19.0"
   },
   "overrides": {
