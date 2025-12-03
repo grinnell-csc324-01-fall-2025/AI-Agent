@@ -6,6 +6,14 @@ dotenv.config();
  * MongoDB connection configuration.
  * Loads settings from environment variables with sensible defaults.
  */
+// Increase timeouts for serverless environments (Vercel, AWS Lambda, etc.)
+const isServerless =
+  typeof process !== 'undefined' &&
+  (process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.VERCEL_URL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME);
+
 export const dbConfig = {
   uri: process.env.MONGODB_URI || 'mongodb://localhost:27017',
   dbName: process.env.MONGODB_DB_NAME || 'ai-agent-db',
@@ -13,11 +21,13 @@ export const dbConfig = {
     maxPoolSize: parseInt(process.env.MONGODB_MAX_POOL_SIZE || '10', 10),
     minPoolSize: parseInt(process.env.MONGODB_MIN_POOL_SIZE || '2', 10),
     connectTimeoutMS: parseInt(
-      process.env.MONGODB_CONNECT_TIMEOUT_MS || '10000',
+      process.env.MONGODB_CONNECT_TIMEOUT_MS ||
+        (isServerless ? '30000' : '10000'),
       10,
     ),
     serverSelectionTimeoutMS: parseInt(
-      process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS || '5000',
+      process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS ||
+        (isServerless ? '30000' : '5000'),
       10,
     ),
     socketTimeoutMS: parseInt(
