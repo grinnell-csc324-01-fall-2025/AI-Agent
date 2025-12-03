@@ -135,14 +135,14 @@ app.use(
       return typeof e === 'object' && e !== null;
     };
 
-    const errorObj = isErrorLike(err) ? err : {};
+    const errorObj = isErrorLike(err) ? err : null;
     const errorMessage =
-      errorObj.message ||
+      errorObj?.message ||
       (err instanceof Error ? err.message : 'Internal Server Error');
-    const errorCode = errorObj.code;
-    const errorStatus = errorObj.status || errorObj.statusCode || 500;
+    const errorCode = errorObj?.code;
+    const errorStatus = errorObj?.status || errorObj?.statusCode || 500;
     const errorStack =
-      errorObj.stack || (err instanceof Error ? err.stack : undefined);
+      errorObj?.stack || (err instanceof Error ? err.stack : undefined);
     const errorType = err instanceof Error ? err.constructor.name : typeof err;
 
     const errorDetails = {
