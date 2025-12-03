@@ -129,24 +129,32 @@ function validateConfig() {
 // Validate configuration on module load
 // In serverless/production environments, we'll validate lazily to avoid crashing on import
 // Check for serverless/production environment indicators
-const isServerlessOrProduction = typeof process !== 'undefined' && (
-  process.env.VERCEL ||
-  process.env.VERCEL_ENV ||
-  process.env.VERCEL_URL ||
-  process.env.AWS_LAMBDA_FUNCTION_NAME ||
-  process.env.NODE_ENV === 'production' ||
-  // If we're not explicitly in development, assume production-like environment
-  (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== undefined)
-);
+const isServerlessOrProduction =
+  typeof process !== 'undefined' &&
+  (process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.VERCEL_URL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NODE_ENV === 'production' ||
+    // If we're not explicitly in development, assume production-like environment
+    (process.env.NODE_ENV !== 'development' &&
+      process.env.NODE_ENV !== undefined));
 
 if (isServerlessOrProduction) {
   // In serverless/production, log warnings but don't throw - let the function start
   try {
     validateConfig();
   } catch (error) {
-    console.warn('[Config] Configuration validation failed:', error instanceof Error ? error.message : String(error));
-    console.warn('[Config] Continuing with partial configuration - some features may not work');
-    console.warn('[Config] Please ensure all required environment variables are set in Vercel project settings');
+    console.warn(
+      '[Config] Configuration validation failed:',
+      error instanceof Error ? error.message : String(error),
+    );
+    console.warn(
+      '[Config] Continuing with partial configuration - some features may not work',
+    );
+    console.warn(
+      '[Config] Please ensure all required environment variables are set in Vercel project settings',
+    );
   }
 } else {
   // In local development, validate strictly
