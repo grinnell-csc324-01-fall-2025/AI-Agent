@@ -71,102 +71,136 @@ export async function getOAuth2ClientForUser(
     throw new Error(`No OAuth tokens found for user ${userId}. Please re-authenticate.`);
   }
 
-  // Check if token is expired (not just expiring soon)
+  // Check if token is expired or expiring soon (refresh 5 minutes before expiry)
   const now = Date.now();
+  const refreshBuffer = 5 * 60 * 1000; // 5 minutes in milliseconds
   const isExpired = tokens.expiry_date && tokens.expiry_date < now;
+  const isExpiringSoon = tokens.expiry_date && (tokens.expiry_date - now) < refreshBuffer;
 
-  // Always refresh if expired, even if just expired
-  if (isExpired) {
+  // Refresh if expired or expiring soon
+  if (isExpired || isExpiringSoon) {
     if (!tokens.refresh_token) {
       console.error(`[OAuth Client] Token expired but no refresh token available for user ${userId}`);
       throw new Error(`Access token expired and no refresh token available for user ${userId}. Please re-authenticate.`);
     }
     
-    console.log(`[OAuth Client] Token expired, refreshing for user ${userId}...`, {
-      expiryDate: tokens.expiry_date,
-      now: now,
-      expiredBy: now - (tokens.expiry_date || 0),
+    const reason = isExpired ? 'expired' : 'expiring soon';
+    console.log(`[OAuth Client] Token ${reason}, refreshing for user ${userId}...`, {
+      expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : 'unknown',
+      now: new Date(now).toISOString(),
+      expiredBy: tokens.expiry_date ? Math.round((now - tokens.expiry_date) / 1000) + 's' : 'unknown',
+      expiresIn: tokens.expiry_date ? Math.round((tokens.expiry_date - now) / 1000) + 's' : 'unknown',
       hasRefreshToken: !!tokens.refresh_token,
     });
     
-    try {
-      const tempClient = new google.auth.OAuth2(
-        config.google.clientId,
-        config.google.clientSecret,
-        config.google.redirectUri,
-      );
-      tempClient.setCredentials({
-        refresh_token: tokens.refresh_token,
-      });
-
-      const {credentials} = await tempClient.refreshAccessToken();
-      
-      // Ensure all required token fields are present and not null
-      if (!credentials.access_token) {
-        console.error(`[OAuth Client] Token refresh response missing access_token for user ${userId}`);
-        throw new Error('Invalid token response from Google: missing access_token');
-      }
-      
-      if (!credentials.refresh_token && !tokens.refresh_token) {
-        console.error(`[OAuth Client] Token refresh response missing refresh_token for user ${userId}`);
-        throw new Error('Invalid token response from Google: missing refresh_token');
-      }
-
-      // Calculate expiry_date from expires_in if provided
-      let newExpiryDate: number;
-      if (credentials.expiry_date) {
-        newExpiryDate = credentials.expiry_date;
-      } else if ((credentials as any).expires_in) {
-        newExpiryDate = Date.now() + ((credentials as any).expires_in * 1000);
-      } else {
-        newExpiryDate = Date.now() + 3600 * 1000; // Default 1 hour
-      }
-      
-      const newTokens: GoogleTokens = {
-        access_token: credentials.access_token,
-        refresh_token: credentials.refresh_token || tokens.refresh_token,
-        scope: credentials.scope || tokens.scope,
-        token_type: credentials.token_type || tokens.token_type,
-        expiry_date: newExpiryDate,
-      };
-      
-      console.log(`[OAuth Client] Token refreshed successfully for user ${userId}`, {
-        newExpiryDate: newExpiryDate,
-        expiresIn: Math.round((newExpiryDate - Date.now()) / 1000 / 60) + ' minutes',
-      });
-
-      // Update tokens in database
+    // Retry logic with exponential backoff
+    const maxRetries = 3;
+    let lastError: any = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        await userRepo.updateTokens(userId, newTokens);
-        tokens = newTokens;
-      } catch (updateError: any) {
-        console.error(`[OAuth Client] Failed to update tokens in database for user ${userId}:`, {
-          errorType: updateError?.constructor?.name,
-          message: updateError?.message,
-          stack: updateError?.stack,
+        const tempClient = new google.auth.OAuth2(
+          config.google.clientId,
+          config.google.clientSecret,
+          config.google.redirectUri,
+        );
+        tempClient.setCredentials({
+          refresh_token: tokens.refresh_token,
         });
-        throw new Error(`Failed to save refreshed tokens to database: ${updateError?.message || 'Unknown error'}`);
+
+        console.log(`[OAuth Client] Token refresh attempt ${attempt}/${maxRetries} for user ${userId}`);
+        const {credentials} = await tempClient.refreshAccessToken();
+      
+        // Ensure all required token fields are present and not null
+        if (!credentials.access_token) {
+          console.error(`[OAuth Client] Token refresh response missing access_token for user ${userId}`);
+          throw new Error('Invalid token response from Google: missing access_token');
+        }
+        
+        if (!credentials.refresh_token && !tokens.refresh_token) {
+          console.error(`[OAuth Client] Token refresh response missing refresh_token for user ${userId}`);
+          throw new Error('Invalid token response from Google: missing refresh_token');
+        }
+
+        // Calculate expiry_date from expires_in if provided
+        let newExpiryDate: number;
+        if (credentials.expiry_date) {
+          newExpiryDate = credentials.expiry_date;
+        } else if ((credentials as any).expires_in) {
+          newExpiryDate = Date.now() + ((credentials as any).expires_in * 1000);
+        } else {
+          newExpiryDate = Date.now() + 3600 * 1000; // Default 1 hour
+        }
+        
+        const newTokens: GoogleTokens = {
+          access_token: credentials.access_token,
+          refresh_token: credentials.refresh_token || tokens.refresh_token,
+          scope: credentials.scope || tokens.scope,
+          token_type: credentials.token_type || tokens.token_type,
+          expiry_date: newExpiryDate,
+        };
+        
+        console.log(`[OAuth Client] Token refreshed successfully for user ${userId} (attempt ${attempt})`, {
+          newExpiryDate: new Date(newExpiryDate).toISOString(),
+          expiresIn: Math.round((newExpiryDate - Date.now()) / 1000 / 60) + ' minutes',
+        });
+
+        // Update tokens in database
+        try {
+          await userRepo.updateTokens(userId, newTokens);
+          tokens = newTokens;
+          break; // Success, exit retry loop
+        } catch (updateError: any) {
+          console.error(`[OAuth Client] Failed to update tokens in database for user ${userId}:`, {
+            errorType: updateError?.constructor?.name,
+            message: updateError?.message,
+            stack: updateError?.stack,
+          });
+          throw new Error(`Failed to save refreshed tokens to database: ${updateError?.message || 'Unknown error'}`);
+        }
+      } catch (error: any) {
+        lastError = error;
+        const errorDetails = {
+          userId,
+          attempt,
+          maxRetries,
+          errorType: error?.constructor?.name,
+          message: error?.message,
+          code: error?.code,
+          response: error?.response?.data,
+        };
+        
+        console.error(`[OAuth Client] Token refresh attempt ${attempt} failed for user ${userId}:`, errorDetails);
+        
+        // Don't retry on certain errors
+        if (error?.code === 400 || error?.message?.includes('invalid_grant')) {
+          throw new Error('Refresh token is invalid or revoked. Please re-authenticate.');
+        } else if (error?.code === 401) {
+          throw new Error('Authentication failed during token refresh. Please re-authenticate.');
+        }
+        
+        // If this is not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+          console.log(`[OAuth Client] Retrying token refresh in ${waitTime / 1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
       }
-    } catch (error: any) {
+    }
+    
+    // If we exhausted all retries, throw the last error
+    if (lastError) {
       const errorDetails = {
         userId,
-        errorType: error?.constructor?.name,
-        message: error?.message,
-        code: error?.code,
-        response: error?.response?.data,
-        stack: error?.stack,
+        errorType: lastError?.constructor?.name,
+        message: lastError?.message,
+        code: lastError?.code,
+        response: lastError?.response?.data,
+        stack: lastError?.stack,
       };
       
-      console.error(`[OAuth Client] Failed to refresh access token for user ${userId}:`, errorDetails);
-      
-      // Provide specific error messages based on error type
-      if (error?.code === 400 || error?.message?.includes('invalid_grant')) {
-        throw new Error('Refresh token is invalid or revoked. Please re-authenticate.');
-      } else if (error?.code === 401) {
-        throw new Error('Authentication failed during token refresh. Please re-authenticate.');
-      } else {
-        throw new Error(`Token refresh failed: ${error?.message || 'Unknown error'}. Please re-authenticate.`);
-      }
+      console.error(`[OAuth Client] Failed to refresh access token after ${maxRetries} attempts for user ${userId}:`, errorDetails);
+      throw new Error(`Token refresh failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}. Please re-authenticate.`);
     }
   }
 
