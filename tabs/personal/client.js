@@ -21,12 +21,96 @@ async function fetchData(endpoint) {
     try {
         // Map 'drive' to 'files' and 'gmail' to 'messages' to match server routes
         const route = endpoint === 'drive' ? 'files' : endpoint === 'gmail' ? 'messages' : endpoint;
-        const res = await fetch(`/api/${route}`);
+        const res = await fetch(`/api/${route}`, {
+            credentials: 'include' // Include cookies for session
+        });
+        
+        // Handle 401 Unauthorized - show sign-in prompt instead of redirecting
+        if (res.status === 401) {
+            showSignInPrompt();
+            return null;
+        }
+        
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return await res.json();
     } catch (e) {
         console.error(`Error fetching ${endpoint}:`, e);
         return null;
+    }
+}
+
+// Check authentication status (non-blocking)
+async function checkAuth() {
+    try {
+        const res = await fetch('/api/auth/status', {
+            credentials: 'include',
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!res.ok) {
+            return null;
+        }
+        
+        const data = await res.json();
+        
+        if (!data.authenticated) {
+            return null;
+        }
+        
+        console.log('Authenticated as:', data.user?.email);
+        
+        // Display user info if available
+        if (data.user) {
+            const avatar = document.querySelector('.user-profile .avatar');
+            if (avatar && data.user.picture) {
+                avatar.style.backgroundImage = `url(${data.user.picture})`;
+                avatar.style.backgroundSize = 'cover';
+                avatar.style.backgroundPosition = 'center';
+            }
+        }
+        
+        return data.user;
+    } catch (e) {
+        console.error('Error checking auth:', e);
+        return null;
+    }
+}
+
+// Show sign-in prompt instead of redirecting
+function showSignInPrompt() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.innerHTML = `
+            <h1>Welcome to AI Agent</h1>
+            <p>Sign in with Google to view your Gmail messages and Drive files.</p>
+            <button onclick="window.location.href='/auth/signin'" style="
+                margin-top: 20px;
+                padding: 12px 24px;
+                background: var(--accent-color);
+                color: var(--bg-color);
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: transform 0.2s;
+            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                Sign in with Google
+            </button>
+        `;
+    }
+    
+    // Show empty states for files and messages
+    const filesContainer = document.getElementById('dashboard-files');
+    const messagesContainer = document.getElementById('dashboard-messages');
+    if (filesContainer) {
+        filesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#888">Sign in to view your files</div>';
+    }
+    if (messagesContainer) {
+        messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#888">Sign in to view your messages</div>';
     }
 }
 
@@ -124,16 +208,37 @@ async function loadGmail() {
 }
 
 // Initial Load & Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    loadDrive();
-    loadGmail();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check authentication (non-blocking)
+    const user = await checkAuth();
+    
+    if (user) {
+        // User is authenticated - load their data
+        loadDrive();
+        loadGmail();
+    } else {
+        // User is not authenticated - show sign-in prompt
+        showSignInPrompt();
+    }
 
     // Bind refresh buttons
     document.querySelectorAll('.refresh-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const section = e.target.closest('section');
-            if (section.id === 'drive-view') loadDrive();
-            if (section.id === 'gmail-view') loadGmail();
+            if (section.id === 'drive-view') {
+                // Check auth before loading
+                checkAuth().then(user => {
+                    if (user) loadDrive();
+                    else window.location.href = '/auth/signin';
+                });
+            }
+            if (section.id === 'gmail-view') {
+                // Check auth before loading
+                checkAuth().then(user => {
+                    if (user) loadGmail();
+                    else window.location.href = '/auth/signin';
+                });
+            }
         });
     });
 });
