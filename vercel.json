@@ -1,5 +1,8 @@
 {
+    "framework": null,
     "buildCommand": "npm run build",
+    "outputDirectory": null,
+    "installCommand": "npm install",
     "rewrites": [
         {
             "source": "/(.*)",
