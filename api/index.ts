@@ -1,5 +1,6 @@
-import {connect} from '../src/db/connection.js';
-import {app} from '../src/server.js';
+// Import from compiled build directory (build runs before serverless function compilation)
+import {connect} from '../build/src/db/connection.js';
+import {app} from '../build/src/server.js';
 
 import express from 'express';
 
