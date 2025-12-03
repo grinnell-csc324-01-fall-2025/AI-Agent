@@ -1,7 +1,7 @@
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
-import { z } from 'zod';
-import { config } from '../config.js';
+import {createOpenAI} from '@ai-sdk/openai';
+import {generateObject} from 'ai';
+import {z} from 'zod';
+import {config} from '../config.js';
 
 export type TaskItem = {
   title: string;
@@ -36,7 +36,7 @@ const taskSchema = z.object({
 
 export async function extractTasksFromText(text: string): Promise<TaskItem[]> {
   try {
-    const { object } = await generateObject({
+    const {object} = await generateObject({
       model: openai('gpt-4o'),
       schema: taskSchema,
       prompt: `Extract actionable tasks from the following text. If there are no tasks, return an empty array.
