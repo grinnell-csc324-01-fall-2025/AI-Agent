@@ -16,7 +16,7 @@
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "zip:manifest": "cd manifest && zip -r ../ai-teams-agent.zip .",
     "clean": "gts clean",
-    "compile": "tsc",
+    "compile": "tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && tsc --noEmit --pretty 2>&1 && exit 1)",
     "check": "tsc --noEmit",
     "fix": "gts fix",
     "prepare": "npm run compile",
