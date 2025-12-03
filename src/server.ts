@@ -11,15 +11,23 @@ import {UserRepository} from './db/repositories/UserRepository.js';
 const app = express();
 
 // Session middleware (must be before other middleware that uses sessions)
+// Determine if we're in a secure environment (HTTPS)
+const isSecure =
+  process.env.NODE_ENV === 'production' ||
+  !!process.env.VERCEL ||
+  !!process.env.VERCEL_ENV ||
+  (typeof process !== 'undefined' && process.env.HTTPS === 'true');
+
 app.use(
   session({
     secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
+      secure: isSecure, // Use secure cookies in production/HTTPS environments
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: isSecure ? ('none' as const) : ('lax' as const), // Allow cross-site cookies in secure environments (for OAuth)
     },
   }),
 );

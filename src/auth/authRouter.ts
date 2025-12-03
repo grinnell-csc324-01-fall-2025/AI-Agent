@@ -8,24 +8,22 @@ export const authRouter = Router();
 
 import * as crypto from 'crypto';
 
-// Store state tokens temporarily (use Redis or database in production)
-const pendingStates = new Map<string, {timestamp: number}>();
-
 // Starts interactive auth and redirects to Google sign-in
 authRouter.get('/signin', (req, res) => {
-  const state = crypto.randomBytes(32).toString('hex');
-  pendingStates.set(state, {timestamp: Date.now()});
-
-  // Clean up old states (older than 10 minutes)
-  const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
-  for (const [key, value] of pendingStates.entries()) {
-    if (value.timestamp < tenMinutesAgo) {
-      pendingStates.delete(key);
-    }
+  // Store state in session instead of in-memory Map
+  // This works in serverless environments where different instances handle different requests
+  if (!req.session) {
+    return res
+      .status(500)
+      .json({ok: false, error: 'Session middleware not configured'});
   }
 
+  const state = crypto.randomBytes(32).toString('hex');
+  req.session.oauthState = state;
+  req.session.oauthStateTimestamp = Date.now();
+
   const url = getAuthUrl(state);
-  res.redirect(url);
+  return res.redirect(url);
 });
 
 // Handles the auth redirect and exchanges the code for an access token
@@ -33,10 +31,43 @@ authRouter.get('/callback', async (req, res) => {
   const code = req.query.code as string;
   const state = req.query.state as string;
 
-  if (!state || !pendingStates.has(state)) {
+  if (!req.session) {
+    return res
+      .status(500)
+      .json({ok: false, error: 'Session middleware not configured'});
+  }
+
+  // Validate state from session instead of in-memory Map
+  const sessionState = req.session.oauthState;
+  const stateTimestamp = req.session.oauthStateTimestamp;
+
+  // Check if state matches
+  if (!state || !sessionState || state !== sessionState) {
+    console.error('State mismatch:', {
+      received: state,
+      expected: sessionState,
+      hasSessionState: !!sessionState,
+    });
     return res.status(400).json({ok: false, error: 'Invalid state parameter'});
   }
-  pendingStates.delete(state);
+
+  // Check if state is expired (older than 10 minutes)
+  const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+  if (!stateTimestamp || stateTimestamp < tenMinutesAgo) {
+    console.error('State expired:', {
+      timestamp: stateTimestamp,
+      tenMinutesAgo,
+      age: stateTimestamp ? Date.now() - stateTimestamp : 'unknown',
+    });
+    // Clear invalid state
+    delete req.session.oauthState;
+    delete req.session.oauthStateTimestamp;
+    return res.status(400).json({ok: false, error: 'State parameter expired'});
+  }
+
+  // Clear state from session after validation
+  delete req.session.oauthState;
+  delete req.session.oauthStateTimestamp;
 
   if (!code) {
     return res.status(400).json({ok: false, error: 'Missing auth code'});
