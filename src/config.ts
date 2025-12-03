@@ -127,7 +127,19 @@ function validateConfig() {
 }
 
 // Validate configuration on module load
-validateConfig();
+// In serverless environments, we'll validate lazily to avoid crashing on import
+if (typeof process !== 'undefined' && process.env.VERCEL) {
+  // In Vercel, log warnings but don't throw - let the function start
+  try {
+    validateConfig();
+  } catch (error) {
+    console.warn('[Config] Configuration validation failed in serverless environment:', error instanceof Error ? error.message : String(error));
+    console.warn('[Config] Continuing with partial configuration - some features may not work');
+  }
+} else {
+  // In local/non-serverless environments, validate strictly
+  validateConfig();
+}
 
 export const config = {
   port: parseInt(process.env.PORT || '3978', 10),

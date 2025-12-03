@@ -1,5 +1,5 @@
-import { connect } from '../src/db/connection.js';
-import { app } from '../src/server.js';
+import {connect} from '../src/db/connection.js';
+import {app} from '../src/server.js';
 
 import express from 'express';
 
