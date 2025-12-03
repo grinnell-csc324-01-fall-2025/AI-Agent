@@ -1,8 +1,14 @@
 {
+    "buildCommand": "npm run build",
     "rewrites": [
         {
             "source": "/(.*)",
             "destination": "/api/index.ts"
         }
-    ]
+    ],
+    "functions": {
+        "api/index.ts": {
+            "includeFiles": "src/**,tabs/**"
+        }
+    }
 }
