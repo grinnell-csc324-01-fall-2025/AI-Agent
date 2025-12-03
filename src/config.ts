@@ -13,6 +13,9 @@ export const config = {
       'https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly'
     ).split(','),
   },
+  session: {
+    secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  },
 };
 
 // Validate required configuration

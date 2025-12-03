@@ -9,14 +9,47 @@ A Google Workspace AI agent with MongoDB storage, AI-powered task inference, and
 npm install
 
 # 2. Configure environment variables
-# Edit .env and add:
-#   - MongoDB connection string (MONGODB_URI)
+# Create a .env file in the root directory with the required variables (see below)
 
 # 3. Run development server
 npm run dev
 ```
 
 The server will start on port 3978 by default.
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+### Required Variables
+
+```bash
+# Google OAuth Configuration
+# Get these from https://console.cloud.google.com/apis/credentials
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:3978/auth/callback
+GOOGLE_SCOPES=https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly
+
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB_NAME=ai-agent-db
+```
+
+### Optional Variables
+
+```bash
+# Server Configuration
+PORT=3978
+BASE_URL=http://localhost:3978
+
+# Session Secret (defaults to 'dev-secret-change-in-production' if not set)
+# Generate a random string for production: openssl rand -base64 32
+SESSION_SECRET=your-random-secret-key
+
+# CORS Configuration (comma-separated list of allowed origins)
+ALLOWED_ORIGINS=http://localhost:3978
+```
 
 ## MongoDB Setup
 
