@@ -2,15 +2,11 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
-import {fileURLToPath} from 'url';
-import {router as apiRouter} from './api/router.js';
-import {authRouter} from './auth/authRouter.js';
-import {config} from './config.js';
-import {connect as connectToDatabase} from './db/connection.js';
-import {UserRepository} from './db/repositories/UserRepository.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { router as apiRouter } from './api/router.js';
+import { authRouter } from './auth/authRouter.js';
+import { config } from './config.js';
+import { connect as connectToDatabase } from './db/connection.js';
+import { UserRepository } from './db/repositories/UserRepository.js';
 
 const app = express();
 
@@ -83,7 +79,7 @@ app.use((req, res, next) => {
 // Serve static assets for the personal tab
 app.use(
   '/tabs/personal',
-  express.static(path.join(__dirname, '../tabs/personal')),
+  express.static(path.join(process.cwd(), 'tabs/personal')),
 );
 
 // Auth + REST API
@@ -217,4 +213,5 @@ async function startServer() {
   }
 }
 
-export {app, startServer};
+export { app, startServer };
+
