@@ -7,7 +7,7 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "tsc --pretty false 2>&1 || (echo 'TypeScript compilation failed' && exit 1)",
+    "build": "tsc",
     "dev": "tsx src/start.ts",
     "start": "node build/start.js",
     "lint": "gts lint",
