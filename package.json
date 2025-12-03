@@ -19,7 +19,7 @@
     "compile": "tsc --pretty || (echo '=== TypeScript compilation failed. Showing errors: ===' && tsc --noEmit --pretty 2>&1 && exit 1)",
     "check": "tsc --noEmit",
     "fix": "gts fix",
-    "prepare": "npm run compile",
+    "prepare": "node -e \"if (!process.env.CI && !process.env.VERCEL) require('child_process').execSync('npm run compile', {stdio: 'inherit'})\"",
     "pretest": "npm run compile",
     "posttest": "npm run lint"
   },

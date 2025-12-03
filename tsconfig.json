@@ -17,7 +17,8 @@
       "./src/types"
     ],
     "composite": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noEmit": false
   },
   "include": [
     "src/**/*.ts",
