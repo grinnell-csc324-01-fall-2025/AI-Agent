@@ -213,3 +213,31 @@ export async function listRecentFiles(
     'Unknown error occurred while fetching files from Google Drive';
   throw new Error(`Failed to fetch files from Google Drive: ${errorMessage}`);
 }
+
+// Normalized shape for use by sync + DB + AI layers
+export interface NormalizedDriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  modifiedTime: string;
+  webViewLink?: string;
+  // You can extend this later (size, owners, etc.) if needed
+}
+
+/**
+ * Wrapper used by higher-level layers (sync, AI, etc.)
+ * Reuses listRecentFiles and returns a clean, normalized array.
+ */
+export async function fetchNormalizedDriveFiles(
+  userId: string,
+): Promise<NormalizedDriveFile[]> {
+  const rawFiles = await listRecentFiles(userId);
+
+  return rawFiles.map((file: any) => ({
+    id: file.id ?? '',
+    name: file.name ?? '',
+    mimeType: file.mimeType ?? '',
+    modifiedTime: file.modifiedTime ?? '',
+    webViewLink: file.webViewLink,
+  }));
+}
