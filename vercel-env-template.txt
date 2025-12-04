@@ -5,14 +5,16 @@
 
 # ============================================
 # MongoDB Configuration (REQUIRED)
+# Get your connection string from MongoDB Atlas: https://cloud.mongodb.com
 # ============================================
-MONGODB_URI=mongodb+srv://nickyadl13_db_user:test-1234@cluster0.q9eyv7t.mongodb.net/?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority
 MONGODB_DB_NAME=ai-agent-db
 
 # ============================================
 # Vercel AI Gateway (REQUIRED)
+# Get your API key from: https://vercel.com/docs/ai-gateway
 # ============================================
-AI_GATEWAY_API_KEY=vck_8PGcUqJ2bEcIDaC2KswI0UyVyNArk6s9SiJv32WWUxmjqpFui144QFlB
+AI_GATEWAY_API_KEY=YOUR_AI_GATEWAY_API_KEY_HERE
 
 # ============================================
 # Google OAuth Configuration (REQUIRED)
@@ -26,9 +28,9 @@ GOOGLE_SCOPES=https://www.googleapis.com/auth/drive.readonly,https://www.googlea
 
 # ============================================
 # Session Secret (REQUIRED for production)
-# Use this generated secure secret:
+# Generate a secure secret using: openssl rand -base64 32
 # ============================================
-SESSION_SECRET=GMw59d2qrgcSWCmACU1PcjGiLz8AhmFobSMnZ+Gc9fs=
+SESSION_SECRET=YOUR_SESSION_SECRET_HERE
 
 # ============================================
 # Server Configuration (Optional - Vercel sets PORT automatically)
