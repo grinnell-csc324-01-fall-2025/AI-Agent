@@ -257,3 +257,48 @@ export async function listMessages(
     'Unknown error occurred while fetching messages from Gmail';
   throw new Error(`Failed to fetch messages from Gmail: ${errorMessage}`);
 }
+
+// Normalized shape for use by sync + DB + AI layers
+export interface NormalizedEmail {
+  id: string;
+  threadId?: string;
+  snippet?: string;
+  subject: string;
+  from: string;
+  to: string[];
+  date?: string;
+}
+
+/**
+ * Helper to extract a header value from a Gmail message.
+ */
+function getHeader(msg: gmail_v1.Schema$Message, name: string): string {
+  const headers = msg.payload?.headers || [];
+  const h = headers.find(
+    header => header.name?.toLowerCase() === name.toLowerCase(),
+  );
+  return h?.value || '';
+}
+
+/**
+ * Wrapper used by higher-level layers (sync, AI, etc.)
+ * Reuses listMessages and returns a clean, normalized array.
+ */
+export async function fetchNormalizedEmails(
+  userId: string,
+): Promise<NormalizedEmail[]> {
+  const rawMessages = await listMessages(userId);
+
+  return rawMessages.map(msg => ({
+    id: msg.id ?? '',
+    threadId: msg.threadId ?? '',
+    snippet: msg.snippet ?? '',
+    subject: getHeader(msg, 'Subject') || '(No subject)',
+    from: getHeader(msg, 'From'),
+    to: getHeader(msg, 'To')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean),
+    date: getHeader(msg, 'Date'),
+  }));
+}
