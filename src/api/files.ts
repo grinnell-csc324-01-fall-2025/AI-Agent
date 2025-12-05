@@ -1,25 +1,70 @@
-import type {Request, Response} from 'express';
-import {Router} from 'express';
-import {requireAuth} from '../auth/middleware.js';
-import {isConnected} from '../db/connection.js';
-import {listRecentFiles} from '../google/drive.js';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
+import { optionalAuth } from '../auth/middleware.js';
+import { isConnected } from '../db/connection.js';
+import { listRecentFiles } from '../google/drive.js';
+import { getMockFiles } from '../google/mockFiles.js';
 
 export const router = Router();
 
 // GET /api/files
+// Query params:
+//   - mock=true: Force mock data for demos
+// Note: Uses optionalAuth - returns mock data when not authenticated
 router.get(
   '/',
-  requireAuth,
+  optionalAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const userId = (req as Request & {userId: string}).userId;
+    const userId = (req as Request & {userId?: string}).userId;
     const startTime = Date.now();
+    const useMock = req.query.mock === 'true';
+
+    // If not authenticated, return mock data
+    if (!userId) {
+      const mockFiles = getMockFiles();
+      console.log(
+        `[Files API] [${new Date().toISOString()}] Not authenticated, returning ${mockFiles.length} mock files`,
+      );
+      res.json({
+        files: mockFiles,
+        count: mockFiles.length,
+        timestamp: new Date().toISOString(),
+        mock: true,
+        reason: 'not_authenticated',
+      });
+      return;
+    }
+
+    // If mock data is explicitly requested, return it immediately
+    if (useMock) {
+      const mockFiles = getMockFiles();
+      console.log(
+        `[Files API] [${new Date().toISOString()}] Returning ${mockFiles.length} mock files (demo mode)`,
+      );
+      res.json({
+        files: mockFiles,
+        count: mockFiles.length,
+        timestamp: new Date().toISOString(),
+        mock: true,
+      });
+      return;
+    }
 
     try {
       // Validate database connection
       if (!isConnected()) {
         console.error('[Files API] Database not connected');
-        res.status(503).json({
-          error: 'Database connection unavailable. Please try again later.',
+        // Fall back to mock data
+        const mockFiles = getMockFiles();
+        console.log(
+          `[Files API] [${new Date().toISOString()}] Database unavailable, returning ${mockFiles.length} mock files`,
+        );
+        res.json({
+          files: mockFiles,
+          count: mockFiles.length,
+          timestamp: new Date().toISOString(),
+          mock: true,
+          reason: 'database_unavailable',
         });
         return;
       }
@@ -67,27 +112,19 @@ router.get(
       );
       console.error('[Files API] Full error object:', e);
 
-      // Determine appropriate status code
-      let statusCode = 500;
-      if (e?.code === 401 || e?.message?.includes('re-authenticate')) {
-        statusCode = 401;
-      } else if (e?.code === 403 || e?.message?.includes('permission')) {
-        statusCode = 403;
-      } else if (e?.code === 429 || e?.message?.includes('rate limit')) {
-        statusCode = 429;
-      } else if (e?.code === 503 || e?.message?.includes('unavailable')) {
-        statusCode = 503;
-      }
+      // Fall back to mock data on any error
+      const mockFiles = getMockFiles();
+      console.log(
+        `[Files API] [${new Date().toISOString()}] Drive API failed, returning ${mockFiles.length} mock files as fallback`,
+      );
 
-      // Provide user-friendly error message
-      const userMessage =
-        e?.message ||
-        'Failed to fetch files. Please try again or re-authenticate.';
-      res.status(statusCode).json({
-        error: userMessage,
-        details:
-          process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+      res.json({
+        files: mockFiles,
+        count: mockFiles.length,
         timestamp: new Date().toISOString(),
+        mock: true,
+        reason: 'drive_api_error',
+        originalError: e?.message || 'Unknown error',
       });
     }
   },

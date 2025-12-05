@@ -11,10 +11,12 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=tru
 MONGODB_DB_NAME=ai-agent-db
 
 # ============================================
-# Vercel AI Gateway (REQUIRED)
-# Get your API key from: https://vercel.com/docs/ai-gateway
+# AI API Key (REQUIRED) - Use ONE of the following:
+# Option 1: Groq (free) - Get from: https://console.groq.com/keys
+# Option 2: Vercel AI Gateway - Get from: https://vercel.com/docs/ai-gateway
 # ============================================
-AI_GATEWAY_API_KEY=YOUR_AI_GATEWAY_API_KEY_HERE
+GROQ_API_KEY=YOUR_GROQ_API_KEY_HERE
+# AI_GATEWAY_API_KEY=YOUR_AI_GATEWAY_API_KEY_HERE
 
 # ============================================
 # Google OAuth Configuration (REQUIRED)

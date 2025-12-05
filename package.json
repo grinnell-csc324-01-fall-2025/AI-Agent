@@ -24,6 +24,7 @@
     "posttest": "npm run lint"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^2.0.32",
     "@ai-sdk/openai": "^2.0.77",
     "@types/express-session": "^1.18.2",
     "ai": "^5.0.106",

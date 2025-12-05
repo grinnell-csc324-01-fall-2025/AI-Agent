@@ -1,25 +1,70 @@
 import type {Request, Response} from 'express';
 import {Router} from 'express';
-import {requireAuth} from '../auth/middleware.js';
+import {optionalAuth} from '../auth/middleware.js';
 import {isConnected} from '../db/connection.js';
 import {listMessages} from '../google/gmail.js';
+import {getMockEmails} from '../google/mockEmails.js';
 
 export const router = Router();
 
 // GET /api/messages
+// Query params:
+//   - mock=true: Force mock data for demos
+// Note: Uses optionalAuth - returns mock data when not authenticated
 router.get(
   '/',
-  requireAuth,
+  optionalAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const userId = (req as Request & {userId: string}).userId;
+    const userId = (req as Request & {userId?: string}).userId;
     const startTime = Date.now();
+    const useMock = req.query.mock === 'true';
+
+    // If not authenticated, return mock data
+    if (!userId) {
+      const mockMessages = getMockEmails();
+      console.log(
+        `[Messages API] [${new Date().toISOString()}] Not authenticated, returning ${mockMessages.length} mock messages`,
+      );
+      res.json({
+        messages: mockMessages,
+        count: mockMessages.length,
+        timestamp: new Date().toISOString(),
+        mock: true,
+        reason: 'not_authenticated',
+      });
+      return;
+    }
+
+    // If mock data is explicitly requested, return it immediately
+    if (useMock) {
+      const mockMessages = getMockEmails();
+      console.log(
+        `[Messages API] [${new Date().toISOString()}] Returning ${mockMessages.length} mock messages (demo mode)`,
+      );
+      res.json({
+        messages: mockMessages,
+        count: mockMessages.length,
+        timestamp: new Date().toISOString(),
+        mock: true,
+      });
+      return;
+    }
 
     try {
       // Validate database connection
       if (!isConnected()) {
         console.error('[Messages API] Database not connected');
-        res.status(503).json({
-          error: 'Database connection unavailable. Please try again later.',
+        // Fall back to mock data
+        const mockMessages = getMockEmails();
+        console.log(
+          `[Messages API] [${new Date().toISOString()}] Database unavailable, returning ${mockMessages.length} mock messages`,
+        );
+        res.json({
+          messages: mockMessages,
+          count: mockMessages.length,
+          timestamp: new Date().toISOString(),
+          mock: true,
+          reason: 'database_unavailable',
         });
         return;
       }
@@ -67,27 +112,19 @@ router.get(
       );
       console.error('[Messages API] Full error object:', e);
 
-      // Determine appropriate status code
-      let statusCode = 500;
-      if (e?.code === 401 || e?.message?.includes('re-authenticate')) {
-        statusCode = 401;
-      } else if (e?.code === 403 || e?.message?.includes('permission')) {
-        statusCode = 403;
-      } else if (e?.code === 429 || e?.message?.includes('rate limit')) {
-        statusCode = 429;
-      } else if (e?.code === 503 || e?.message?.includes('unavailable')) {
-        statusCode = 503;
-      }
+      // Fall back to mock data on any error
+      const mockMessages = getMockEmails();
+      console.log(
+        `[Messages API] [${new Date().toISOString()}] Gmail API failed, returning ${mockMessages.length} mock messages as fallback`,
+      );
 
-      // Provide user-friendly error message
-      const userMessage =
-        e?.message ||
-        'Failed to fetch messages. Please try again or re-authenticate.';
-      res.status(statusCode).json({
-        error: userMessage,
-        details:
-          process.env.NODE_ENV === 'development' ? errorDetails : undefined,
+      res.json({
+        messages: mockMessages,
+        count: mockMessages.length,
         timestamp: new Date().toISOString(),
+        mock: true,
+        reason: 'gmail_api_error',
+        originalError: e?.message || 'Unknown error',
       });
     }
   },

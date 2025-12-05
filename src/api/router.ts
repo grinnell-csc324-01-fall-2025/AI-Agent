@@ -6,9 +6,11 @@ import * as tasks from './tasks.js';
 import * as files from './files.js';
 import * as messages from './messages.js';
 import * as auth from './auth.js';
+import {chatRouter} from './chat.js';
 
 router.use('/health', health.router);
 router.use('/tasks', tasks.router);
 router.use('/files', files.router);
 router.use('/messages', messages.router);
 router.use('/auth', auth.router);
+router.use('/chat', chatRouter);
