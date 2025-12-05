@@ -104,19 +104,19 @@ body {
     align-items: center;
     justify-content: center;
     filter: drop-shadow(0 0 10px var(--accent-glow));
+    color: var(--accent);
 }
 
 .logo-icon svg,
 .logo-icon i {
-    width: 32px;
-    height: 32px;
-    stroke: url(#logo-gradient);
-    color: var(--gradient-1);
+    width: 28px;
+    height: 28px;
+    stroke: var(--accent);
 }
 
 .logo-lucide {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
 }
 
 .logo-text {
@@ -714,33 +714,304 @@ body {
     color: var(--text-muted);
 }
 
+/* Mail View Header */
+.mail-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.mail-count {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* Mail Toolbar */
+.mail-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 0 0;
+    margin-bottom: -1px;
+}
+
+.mail-toolbar-left,
+.mail-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mail-toolbar-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.mail-toolbar-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.mail-toolbar-btn svg,
+.mail-toolbar-btn i {
+    width: 18px;
+    height: 18px;
+}
+
+.mail-pagination {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 /* Mail List */
 .mail-list {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
 }
 
+/* Gmail-style Mail Item */
 .mail-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    text-decoration: none;
-    color: var(--text-primary);
-    transition: all 0.2s ease;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mail-item:last-child {
+    border-bottom: none;
 }
 
 .mail-item:hover {
-    border-color: var(--border-light);
     background: var(--bg-hover);
+    box-shadow: inset 4px 0 0 var(--accent);
 }
 
+.mail-item.unread {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.mail-item.unread:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* Mail Item Checkbox */
+.mail-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-light);
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.mail-checkbox:hover {
+    border-color: var(--accent);
+}
+
+/* Mail Star */
+.mail-star {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.mail-star:hover {
+    background: var(--bg-hover);
+    color: var(--warning);
+}
+
+.mail-star.starred {
+    color: var(--warning);
+}
+
+.mail-star svg,
+.mail-star i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Sender Avatar */
+.mail-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.mail-avatar.color-1 { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+.mail-avatar.color-2 { background: linear-gradient(135deg, #ec4899, #f43f5e); color: white; }
+.mail-avatar.color-3 { background: linear-gradient(135deg, #14b8a6, #22c55e); color: white; }
+.mail-avatar.color-4 { background: linear-gradient(135deg, #f59e0b, #f97316); color: white; }
+.mail-avatar.color-5 { background: linear-gradient(135deg, #3b82f6, #0ea5e9); color: white; }
+
+/* Mail Content */
+.mail-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mail-sender {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.mail-item.unread .mail-sender {
+    font-weight: 700;
+}
+
+.mail-subject {
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.mail-item.unread .mail-subject {
+    font-weight: 600;
+}
+
+.mail-snippet {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mail-separator {
+    color: var(--text-muted);
+    margin: 0 4px;
+}
+
+/* Mail Date */
+.mail-date {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.mail-item.unread .mail-date {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Mail Actions (on hover) */
+.mail-actions {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.mail-item:hover .mail-actions {
+    display: flex;
+}
+
+.mail-item:hover .mail-date {
+    display: none;
+}
+
+.mail-action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.mail-action-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.mail-action-btn svg,
+.mail-action-btn i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Demo Notice */
+.mail-demo-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    margin-top: 16px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mail-demo-notice svg,
+.mail-demo-notice i {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+}
+
+/* Legacy mail-icon for backwards compatibility */
 .mail-icon {
     font-size: 20px;
     display: flex;
@@ -753,19 +1024,6 @@ body {
 .mail-icon i {
     width: 20px;
     height: 20px;
-}
-
-.mail-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.mail-subject {
-    font-weight: 500;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .mail-from {

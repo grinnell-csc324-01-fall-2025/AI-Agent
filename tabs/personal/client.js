@@ -404,7 +404,12 @@ function getFileType(mimeType) {
 // Mail View
 async function loadMail() {
     const container = document.getElementById('mail-list');
+    const countEl = document.getElementById('mail-count');
+    const paginationEl = document.getElementById('mail-pagination');
+    const demoNotice = document.getElementById('mail-demo-notice');
+    
     container.innerHTML = '<div class="loading-state"><div class="loader"></div><p>Loading messages...</p></div>';
+    if (demoNotice) demoNotice.style.display = 'none';
     
     try {
         const res = await fetch('/api/messages', { credentials: 'include' });
@@ -412,6 +417,16 @@ async function loadMail() {
         
         const data = await res.json();
         const messages = data.messages || [];
+        const isMock = data.mock === true;
+        
+        // Update count and pagination
+        if (countEl) countEl.textContent = `${messages.length} messages`;
+        if (paginationEl) paginationEl.textContent = `1-${messages.length} of ${messages.length}`;
+        
+        // Show demo notice if using mock data
+        if (demoNotice && isMock) {
+            demoNotice.style.display = 'flex';
+        }
         
         if (!messages.length) {
             container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('inbox')}</span><p>No messages</p></div>`;
@@ -419,27 +434,121 @@ async function loadMail() {
             return;
         }
         
-        container.innerHTML = messages.map(msg => {
+        container.innerHTML = messages.map((msg, index) => {
             const subject = msg.payload?.headers?.find(h => h.name === 'Subject')?.value || '(No Subject)';
-            const from = msg.payload?.headers?.find(h => h.name === 'From')?.value || 'Unknown';
+            const fromRaw = msg.payload?.headers?.find(h => h.name === 'From')?.value || 'Unknown';
+            const dateRaw = msg.payload?.headers?.find(h => h.name === 'Date')?.value;
+            const snippet = msg.snippet || '';
+            const isUnread = msg.labelIds?.includes('UNREAD') || false;
+            const isStarred = msg.labelIds?.includes('STARRED') || false;
+            
+            // Parse sender name and email
+            const senderMatch = fromRaw.match(/^([^<]+)?<?([^>]+)?>?$/);
+            const senderName = senderMatch?.[1]?.trim() || senderMatch?.[2] || fromRaw;
+            const senderInitial = senderName.charAt(0).toUpperCase();
+            
+            // Format date
+            const formattedDate = formatMailDate(dateRaw);
+            
+            // Assign avatar color based on sender
+            const colorIndex = (senderName.charCodeAt(0) % 5) + 1;
             
             return `
-                <div class="mail-item">
-                    <span class="mail-icon">${icon('mail')}</span>
-                    <div class="mail-content">
-                        <div class="mail-subject">${escapeHtml(subject)}</div>
-                        <div class="mail-from">${escapeHtml(from)}</div>
-                    </div>
-                    <button class="mail-action" onclick="summarizeEmail('${msg.id}', this)">
-                        ${icon('sparkles')} Summarize
+                <div class="mail-item ${isUnread ? 'unread' : ''}" data-id="${msg.id}">
+                    <div class="mail-checkbox"></div>
+                    <button class="mail-star ${isStarred ? 'starred' : ''}" onclick="toggleStar(this, event)">
+                        ${icon(isStarred ? 'star' : 'star')}
                     </button>
+                    <div class="mail-avatar color-${colorIndex}">${senderInitial}</div>
+                    <div class="mail-content">
+                        <div class="mail-header">
+                            <span class="mail-sender">${escapeHtml(senderName)}</span>
+                        </div>
+                        <div class="mail-subject">
+                            ${escapeHtml(subject)}
+                            <span class="mail-separator">-</span>
+                            <span class="mail-snippet">${escapeHtml(snippet.substring(0, 100))}</span>
+                        </div>
+                    </div>
+                    <span class="mail-date">${formattedDate}</span>
+                    <div class="mail-actions">
+                        <button class="mail-action-btn" onclick="archiveEmail('${msg.id}', event)" title="Archive">
+                            ${icon('archive')}
+                        </button>
+                        <button class="mail-action-btn" onclick="deleteEmail('${msg.id}', event)" title="Delete">
+                            ${icon('trash-2')}
+                        </button>
+                        <button class="mail-action-btn" onclick="summarizeEmail('${msg.id}', this)" title="Summarize with AI">
+                            ${icon('sparkles')}
+                        </button>
+                    </div>
                 </div>
             `;
         }).join('');
         refreshIcons();
     } catch (e) {
+        console.error('Failed to load mail:', e);
         container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('alert-triangle')}</span><p>Failed to load messages</p></div>`;
         refreshIcons();
+    }
+}
+
+// Format mail date like Gmail
+function formatMailDate(dateStr) {
+    if (!dateStr) return '';
+    
+    try {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            // Today - show time
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        } else if (diffDays === 1) {
+            return 'Yesterday';
+        } else if (diffDays < 7) {
+            // This week - show day name
+            return date.toLocaleDateString('en-US', { weekday: 'short' });
+        } else if (date.getFullYear() === now.getFullYear()) {
+            // This year - show month and day
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } else {
+            // Older - show full date
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+    } catch (e) {
+        return '';
+    }
+}
+
+// Toggle star on email
+function toggleStar(btn, event) {
+    event.stopPropagation();
+    btn.classList.toggle('starred');
+    refreshIcons();
+}
+
+// Archive email (placeholder)
+function archiveEmail(emailId, event) {
+    event.stopPropagation();
+    const item = document.querySelector(`.mail-item[data-id="${emailId}"]`);
+    if (item) {
+        item.style.opacity = '0.5';
+        item.style.transform = 'translateX(100px)';
+        setTimeout(() => item.remove(), 300);
+    }
+}
+
+// Delete email (placeholder)
+function deleteEmail(emailId, event) {
+    event.stopPropagation();
+    const item = document.querySelector(`.mail-item[data-id="${emailId}"]`);
+    if (item) {
+        item.style.opacity = '0.5';
+        item.style.transform = 'translateX(-100px)';
+        setTimeout(() => item.remove(), 300);
     }
 }
 
@@ -512,5 +621,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// Make summarizeEmail global for onclick
+// Make functions global for onclick handlers
 window.summarizeEmail = summarizeEmail;
+window.toggleStar = toggleStar;
+window.archiveEmail = archiveEmail;
+window.deleteEmail = deleteEmail;

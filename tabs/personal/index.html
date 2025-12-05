@@ -146,14 +146,40 @@
             <!-- Mail View -->
             <section id="mail-view" class="view">
                 <div class="view-header">
-                    <h1>Gmail</h1>
-                    <button class="btn-secondary" id="refresh-mail-btn"><i data-lucide="refresh-cw"></i> Refresh</button>
+                    <h1>Inbox</h1>
+                    <div class="mail-header-actions">
+                        <span class="mail-count" id="mail-count"></span>
+                        <button class="btn-secondary" id="refresh-mail-btn"><i data-lucide="refresh-cw"></i> Refresh</button>
+                    </div>
+                </div>
+                <div class="mail-toolbar">
+                    <div class="mail-toolbar-left">
+                        <button class="mail-toolbar-btn" title="Select all">
+                            <i data-lucide="square"></i>
+                        </button>
+                        <button class="mail-toolbar-btn" title="Archive">
+                            <i data-lucide="archive"></i>
+                        </button>
+                        <button class="mail-toolbar-btn" title="Delete">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                        <button class="mail-toolbar-btn" title="Mark as read">
+                            <i data-lucide="mail-open"></i>
+                        </button>
+                    </div>
+                    <div class="mail-toolbar-right">
+                        <span class="mail-pagination" id="mail-pagination"></span>
+                    </div>
                 </div>
                 <div class="mail-list" id="mail-list">
                     <div class="loading-state">
                         <div class="loader"></div>
                         <p>Loading messages...</p>
                     </div>
+                </div>
+                <div class="mail-demo-notice" id="mail-demo-notice" style="display: none;">
+                    <i data-lucide="info"></i>
+                    <span>Showing demo emails. Connect your Gmail for real messages.</span>
                 </div>
             </section>
 
