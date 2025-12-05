@@ -15,8 +15,8 @@ function createMockMessage(
   to: string,
   snippet: string,
   date: Date,
-  isUnread: boolean = false,
-  isStarred: boolean = false,
+  isUnread = false,
+  isStarred = false,
 ): gmail_v1.Schema$Message {
   const dateStr = date.toUTCString();
   const labels = ['INBOX'];
@@ -117,7 +117,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Reminder: Team Offsite Next Week',
     'Kenji Tanaka <kenji.t@company.com>',
     'all-staff@company.com',
-    "Friendly reminder that our team offsite is scheduled for next Thursday and Friday at the Riverside Conference Center. Please confirm your attendance and dietary preferences by EOD Monday...",
+    'Friendly reminder that our team offsite is scheduled for next Thursday and Friday at the Riverside Conference Center. Please confirm your attendance and dietary preferences by EOD Monday...',
     daysAgo(1),
     false,
     false,
@@ -183,4 +183,3 @@ export function getMockEmailById(
 ): gmail_v1.Schema$Message | undefined {
   return mockEmails.find(email => email.id === id);
 }
-

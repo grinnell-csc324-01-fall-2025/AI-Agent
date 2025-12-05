@@ -23,7 +23,8 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.document',
     modifiedTime: hoursAgo(2),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document',
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document',
     owners: [{displayName: 'Priya Sharma', emailAddress: 'priya@company.com'}],
   },
   {
@@ -32,8 +33,11 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.spreadsheet',
     modifiedTime: hoursAgo(5),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.spreadsheet',
-    owners: [{displayName: 'Marcus Johnson', emailAddress: 'marcus@company.com'}],
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.spreadsheet',
+    owners: [
+      {displayName: 'Marcus Johnson', emailAddress: 'marcus@company.com'},
+    ],
   },
   {
     id: 'mock_file_003',
@@ -41,8 +45,11 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.presentation',
     modifiedTime: hoursAgo(8),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.presentation',
-    owners: [{displayName: 'Jordan Rivera', emailAddress: 'jordan@company.com'}],
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.presentation',
+    owners: [
+      {displayName: 'Jordan Rivera', emailAddress: 'jordan@company.com'},
+    ],
   },
   {
     id: 'mock_file_004',
@@ -50,7 +57,8 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.document',
     modifiedTime: daysAgo(1),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document',
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document',
     owners: [{displayName: 'Amara Okonkwo', emailAddress: 'amara@company.com'}],
   },
   {
@@ -59,7 +67,8 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.folder',
     modifiedTime: daysAgo(1),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.folder',
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.folder',
     owners: [{displayName: 'Wei Chen', emailAddress: 'wei@company.com'}],
   },
   {
@@ -68,8 +77,11 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/pdf',
     modifiedTime: daysAgo(2),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/pdf',
-    owners: [{displayName: 'Fatima Al-Hassan', emailAddress: 'fatima@company.com'}],
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/pdf',
+    owners: [
+      {displayName: 'Fatima Al-Hassan', emailAddress: 'fatima@company.com'},
+    ],
   },
   {
     id: 'mock_file_007',
@@ -77,8 +89,11 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.document',
     modifiedTime: daysAgo(3),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document',
-    owners: [{displayName: 'Elena Rodriguez', emailAddress: 'elena@company.com'}],
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document',
+    owners: [
+      {displayName: 'Elena Rodriguez', emailAddress: 'elena@company.com'},
+    ],
   },
   {
     id: 'mock_file_008',
@@ -86,7 +101,8 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/vnd.google-apps.spreadsheet',
     modifiedTime: daysAgo(3),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.spreadsheet',
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.spreadsheet',
     owners: [{displayName: 'Kenji Tanaka', emailAddress: 'kenji@company.com'}],
   },
   {
@@ -95,8 +111,11 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'application/pdf',
     modifiedTime: daysAgo(5),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/application/pdf',
-    owners: [{displayName: 'Jordan Rivera', emailAddress: 'jordan@company.com'}],
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/application/pdf',
+    owners: [
+      {displayName: 'Jordan Rivera', emailAddress: 'jordan@company.com'},
+    ],
   },
   {
     id: 'mock_file_010',
@@ -104,7 +123,8 @@ export const mockFiles: drive_v3.Schema$File[] = [
     mimeType: 'image/png',
     modifiedTime: daysAgo(7),
     webViewLink: '#',
-    iconLink: 'https://drive-thirdparty.googleusercontent.com/16/type/image/png',
+    iconLink:
+      'https://drive-thirdparty.googleusercontent.com/16/type/image/png',
     owners: [{displayName: 'Wei Chen', emailAddress: 'wei@company.com'}],
   },
 ];
@@ -122,4 +142,3 @@ export function getMockFiles(): drive_v3.Schema$File[] {
 export function getMockFileById(id: string): drive_v3.Schema$File | undefined {
   return mockFiles.find(file => file.id === id);
 }
-

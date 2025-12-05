@@ -1,6 +1,6 @@
-import type { NextFunction, Request, Response } from 'express';
-import { isConnected } from '../db/connection.js';
-import { UserRepository } from '../db/repositories/UserRepository.js';
+import type {NextFunction, Request, Response} from 'express';
+import {isConnected} from '../db/connection.js';
+import {UserRepository} from '../db/repositories/UserRepository.js';
 
 /**
  * Express middleware that makes auth optional.
@@ -16,14 +16,14 @@ export async function optionalAuth(
     // Try to get userId from session
     if (req.session?.userId) {
       const userId = req.session.userId;
-      
+
       // Validate userId format
       if (typeof userId === 'string' && userId.length === 24) {
         // Attach userId to request
         (req as Request & {userId?: string}).userId = userId;
       }
     }
-    
+
     // Always continue - endpoints will handle missing userId
     next();
   } catch (error) {

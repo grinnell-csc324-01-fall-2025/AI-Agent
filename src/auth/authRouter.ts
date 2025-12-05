@@ -457,7 +457,7 @@ authRouter.get('/signout', (req, res) => {
   // Clear all auth-related cookies
   res.clearCookie('connect.sid', {path: '/'});
   res.clearCookie('oauth_state', {path: '/'});
-  
+
   if (req.session) {
     req.session.destroy(err => {
       if (err) {

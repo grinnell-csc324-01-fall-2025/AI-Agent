@@ -116,7 +116,9 @@ function validateConfig() {
 
   // Validate AI API Key (supports both GROQ_API_KEY and AI_GATEWAY_API_KEY)
   if (!process.env.GROQ_API_KEY && !process.env.AI_GATEWAY_API_KEY) {
-    errors.push('GROQ_API_KEY or AI_GATEWAY_API_KEY is required for AI features');
+    errors.push(
+      'GROQ_API_KEY or AI_GATEWAY_API_KEY is required for AI features',
+    );
   }
 
   if (errors.length > 0) {
@@ -179,7 +181,8 @@ export const config = {
   session: {
     secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   },
-  aiGatewayApiKey: process.env.GROQ_API_KEY || process.env.AI_GATEWAY_API_KEY || '',
+  aiGatewayApiKey:
+    process.env.GROQ_API_KEY || process.env.AI_GATEWAY_API_KEY || '',
 };
 
 // Log configuration status (without sensitive data)

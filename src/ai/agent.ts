@@ -213,4 +213,3 @@ Only return JSON.`,
     return {keywords: query.split(' ')};
   }
 }
-
