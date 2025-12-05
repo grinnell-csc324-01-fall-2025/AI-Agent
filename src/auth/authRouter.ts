@@ -324,7 +324,9 @@ authRouter.get('/callback', async (req, res) => {
       console.error('Failed to save session during callback:', saveError);
       // Still redirect even if session save fails - user is already authenticated
       // This prevents the user from being stuck on a timeout
-      console.warn('Redirecting despite session save error - user authenticated');
+      console.warn(
+        'Redirecting despite session save error - user authenticated',
+      );
       return res.redirect('/tabs/personal/index.html');
     }
   } catch (e) {
