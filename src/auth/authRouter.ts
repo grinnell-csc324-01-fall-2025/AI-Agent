@@ -9,7 +9,7 @@ export const authRouter = Router();
 import * as crypto from 'crypto';
 
 // Starts interactive auth and redirects to Google sign-in
-authRouter.get('/signin', (req, res) => {
+authRouter.get('/signin', async (req, res) => {
   // Store state in session instead of in-memory Map
   // This works in serverless environments where different instances handle different requests
   if (!req.session) {
@@ -26,19 +26,37 @@ authRouter.get('/signin', (req, res) => {
     sessionId: req.sessionID,
     state: state,
     timestamp: req.session.oauthStateTimestamp,
+    cookie: req.headers.cookie,
   });
 
   const url = getAuthUrl(state);
 
   // Manually save session to ensure it persists in Mongo before redirecting (critical for serverless)
-  req.session.save(err => {
-    if (err) {
-      console.error('Session save error during signin:', err);
-      return res.status(500).json({ok: false, error: 'Failed to save session'});
-    }
+  // Use a promise-based approach to ensure the save completes before redirect
+  try {
+    await new Promise<void>((resolve, reject) => {
+      req.session.save(err => {
+        if (err) {
+          console.error('Session save error during signin:', {
+            error: err,
+            sessionId: req.sessionID,
+            state: state,
+          });
+          reject(err);
+        } else {
+          console.log('Session saved successfully during signin:', {
+            sessionId: req.sessionID,
+            state: state,
+          });
+          resolve();
+        }
+      });
+    });
     return res.redirect(url);
-  });
-  return;
+  } catch (saveError) {
+    console.error('Failed to save session during signin:', saveError);
+    return res.status(500).json({ok: false, error: 'Failed to save session'});
+  }
 });
 
 // Handles the auth redirect and exchanges the code for an access token
@@ -256,16 +274,33 @@ authRouter.get('/callback', async (req, res) => {
     req.session.userId = user._id.toString();
 
     // Manually save session to ensure userId persists before redirecting
-    req.session.save(err => {
-      if (err) {
-        console.error('Session save error during callback:', err);
-        return res
-          .status(500)
-          .json({ok: false, error: 'Failed to save session'});
-      }
+    // Use a promise-based approach to ensure the save completes before redirect
+    try {
+      await new Promise<void>((resolve, reject) => {
+        req.session.save(err => {
+          if (err) {
+            console.error('Session save error during callback:', {
+              error: err,
+              sessionId: req.sessionID,
+              userId: user._id.toString(),
+            });
+            reject(err);
+          } else {
+            console.log('Session saved successfully during callback:', {
+              sessionId: req.sessionID,
+              userId: user._id.toString(),
+            });
+            resolve();
+          }
+        });
+      });
       return res.redirect('/tabs/personal/index.html');
-    });
-    return;
+    } catch (saveError) {
+      console.error('Failed to save session during callback:', saveError);
+      return res
+        .status(500)
+        .json({ok: false, error: 'Failed to save session'});
+    }
   } catch (e) {
     console.error('OAuth callback error:', e);
     return res.status(500).json({ok: false, error: 'Authentication failed'});

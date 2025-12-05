@@ -88,9 +88,17 @@ export class DatabaseConnection {
         ); // Mask credentials
         console.log(`[Database Connection] Database name: ${dbConfig.dbName}`);
 
+        // Create a new client if we don't have one
+        // MongoDB's connect() is idempotent, but if a previous connection failed,
+        // we should create a fresh client to avoid issues with stale state
         if (!this.client) {
+          console.log('[Database Connection] Creating new MongoClient instance');
           this.client = new MongoClient(dbConfig.uri, dbConfig.options);
           this.setupEventListeners();
+        } else {
+          console.log(
+            '[Database Connection] Attempting to connect with existing MongoClient',
+          );
         }
 
         // Set connection timeout
@@ -146,7 +154,7 @@ export class DatabaseConnection {
           );
           await new Promise(resolve => setTimeout(resolve, waitTime));
         } else {
-          // Clean up failed connection attempt
+          // Clean up failed connection attempt and create a new client for next retry
           if (this.client) {
             try {
               await this.client.close();
@@ -157,6 +165,7 @@ export class DatabaseConnection {
               );
             }
             this.client = null;
+            this.db = null;
           }
         }
       }
@@ -252,12 +261,35 @@ export class DatabaseConnection {
   /**
    * Asynchronously retrieves the MongoDB client instance, connecting if necessary.
    * Useful for libraries that need the client directly (like connect-mongo).
+   * Verifies the client is actually connected before returning it.
    * @returns Promise resolving to the MongoDB client instance
    */
   public async getClientAsync(): Promise<MongoClient> {
+    // Always ensure we have a valid, connected client
     if (this.client && this.db) {
-      return this.client;
+      // Verify the connection is actually working with a quick ping
+      try {
+        await this.db.admin().ping();
+        return this.client;
+      } catch (pingError) {
+        console.warn(
+          '[Database Connection] Ping failed on existing client, reconnecting...',
+          pingError,
+        );
+        // Connection is stale, clear it and reconnect
+        this.db = null;
+        if (this.client) {
+          try {
+            await this.client.close();
+          } catch (closeError) {
+            // Ignore close errors
+          }
+          this.client = null;
+        }
+      }
     }
+
+    // Connect (or reconnect) to get a fresh client
     await this.connect();
     if (!this.client) {
       throw new Error('Failed to initialize MongoDB client');

@@ -27,17 +27,21 @@ app.use(
     secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
+    name: 'connect.sid', // Explicit session cookie name
     store: MongoStore.create({
       clientPromise: getClientAsync(),
       dbName: 'ai-agent-db', // Ensure this matches your DB name
       ttl: 24 * 60 * 60, // 1 day
       autoRemove: 'native',
+      stringify: false, // Store as BSON for better performance
     }),
     cookie: {
       secure: isSecure, // Use secure cookies in production/HTTPS environments
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: isSecure ? ('none' as const) : ('lax' as const), // Allow cross-site cookies in secure environments (for OAuth)
+      // Don't set domain - let browser handle it (Vercel uses multiple domains)
+      // path: '/' is default, which is correct
     },
   }),
 );
