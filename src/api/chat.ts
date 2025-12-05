@@ -9,8 +9,32 @@ import {
 } from '../ai/agent.js';
 import {getOAuth2ClientForUser} from '../google/client.js';
 import {google} from 'googleapis';
+import {getMockEmails} from '../google/mockEmails.js';
+import {getMockFiles} from '../google/mockFiles.js';
 
 export const chatRouter = Router();
+
+// Helper to get mock email context
+function getMockEmailContext(): string {
+  const mockEmails = getMockEmails();
+  return mockEmails
+    .slice(0, 5)
+    .map(email => {
+      const subject = email.payload?.headers?.find(h => h.name === 'Subject')?.value || 'No subject';
+      const from = email.payload?.headers?.find(h => h.name === 'From')?.value || 'Unknown';
+      return `- ${subject} (from: ${from})`;
+    })
+    .join('\n');
+}
+
+// Helper to get mock file context
+function getMockFileContext(): string {
+  const mockFiles = getMockFiles();
+  return mockFiles
+    .slice(0, 5)
+    .map(f => `- ${f.name}`)
+    .join('\n');
+}
 
 // Middleware to check authentication
 const requireAuth = (
@@ -43,55 +67,68 @@ chatRouter.post('/', requireAuth, async (req, res) => {
     let context: {emails?: string; files?: string} | undefined;
 
     // Optionally include user's email/file context
-    if (includeContext && req.session?.userId) {
-      try {
-        const client = await getOAuth2ClientForUser(req.session.userId);
-        const gmail = google.gmail({version: 'v1', auth: client});
-        const drive = google.drive({version: 'v3', auth: client});
+    if (includeContext) {
+      // Try to get real data if authenticated
+      if (req.session?.userId) {
+        try {
+          const client = await getOAuth2ClientForUser(req.session.userId);
+          const gmail = google.gmail({version: 'v1', auth: client});
+          const drive = google.drive({version: 'v3', auth: client});
 
-        // Get recent emails
-        const emailRes = await gmail.users.messages.list({
-          userId: 'me',
-          maxResults: 5,
-        });
+          // Get recent emails
+          const emailRes = await gmail.users.messages.list({
+            userId: 'me',
+            maxResults: 5,
+          });
 
-        if (emailRes.data.messages) {
-          const emailDetails = await Promise.all(
-            emailRes.data.messages.slice(0, 3).map(async msg => {
-              const detail = await gmail.users.messages.get({
-                userId: 'me',
-                id: msg.id!,
-                format: 'metadata',
-                metadataHeaders: ['Subject', 'From'],
-              });
-              const subject =
-                detail.data.payload?.headers?.find(h => h.name === 'Subject')
-                  ?.value || 'No subject';
-              const from =
-                detail.data.payload?.headers?.find(h => h.name === 'From')
-                  ?.value || 'Unknown';
-              return `- ${subject} (from: ${from})`;
-            }),
-          );
-          context = {emails: emailDetails.join('\n')};
-        }
+          if (emailRes.data.messages) {
+            const emailDetails = await Promise.all(
+              emailRes.data.messages.slice(0, 3).map(async msg => {
+                const detail = await gmail.users.messages.get({
+                  userId: 'me',
+                  id: msg.id!,
+                  format: 'metadata',
+                  metadataHeaders: ['Subject', 'From'],
+                });
+                const subject =
+                  detail.data.payload?.headers?.find(h => h.name === 'Subject')
+                    ?.value || 'No subject';
+                const from =
+                  detail.data.payload?.headers?.find(h => h.name === 'From')
+                    ?.value || 'Unknown';
+                return `- ${subject} (from: ${from})`;
+              }),
+            );
+            context = {emails: emailDetails.join('\n')};
+          }
 
-        // Get recent files
-        const fileRes = await drive.files.list({
-          pageSize: 5,
-          orderBy: 'modifiedTime desc',
-          fields: 'files(name)',
-        });
+          // Get recent files
+          const fileRes = await drive.files.list({
+            pageSize: 5,
+            orderBy: 'modifiedTime desc',
+            fields: 'files(name)',
+          });
 
-        if (fileRes.data.files) {
+          if (fileRes.data.files) {
+            context = {
+              ...context,
+              files: fileRes.data.files.map(f => `- ${f.name}`).join('\n'),
+            };
+          }
+        } catch (contextError) {
+          console.warn('Failed to load real context, using mock data:', contextError);
+          // Fall back to mock data
           context = {
-            ...context,
-            files: fileRes.data.files.map(f => `- ${f.name}`).join('\n'),
+            emails: getMockEmailContext(),
+            files: getMockFileContext(),
           };
         }
-      } catch (contextError) {
-        console.warn('Failed to load context:', contextError);
-        // Continue without context
+      } else {
+        // Not authenticated - use mock data for demo
+        context = {
+          emails: getMockEmailContext(),
+          files: getMockFileContext(),
+        };
       }
     }
 
