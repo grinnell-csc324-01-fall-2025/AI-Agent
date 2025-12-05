@@ -8,89 +8,99 @@ export const authRouter = Router();
 
 import * as crypto from 'crypto';
 
+// Helper to create a signed state value (HMAC)
+// This allows us to verify state without needing MongoDB
+function createSignedState(state: string, timestamp: number): string {
+  const secret = config.session.secret;
+  const data = `${state}:${timestamp}`;
+  const hmac = crypto.createHmac('sha256', secret).update(data).digest('hex');
+  // Format: state:timestamp:signature
+  return Buffer.from(`${data}:${hmac}`).toString('base64url');
+}
+
+// Helper to verify and extract state from signed value
+function verifySignedState(
+  signedState: string,
+): {state: string; timestamp: number} | null {
+  try {
+    const decoded = Buffer.from(signedState, 'base64url').toString('utf-8');
+    const parts = decoded.split(':');
+    if (parts.length !== 3) return null;
+
+    const [state, timestampStr, signature] = parts;
+    const timestamp = parseInt(timestampStr, 10);
+    if (isNaN(timestamp)) return null;
+
+    // Verify signature
+    const secret = config.session.secret;
+    const data = `${state}:${timestamp}`;
+    const expectedHmac = crypto
+      .createHmac('sha256', secret)
+      .update(data)
+      .digest('hex');
+
+    // Constant-time comparison to prevent timing attacks
+    if (
+      signature.length !== expectedHmac.length ||
+      !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedHmac))
+    ) {
+      return null;
+    }
+
+    return {state, timestamp};
+  } catch {
+    return null;
+  }
+}
+
 // Starts interactive auth and redirects to Google sign-in
 authRouter.get('/signin', async (req, res) => {
-  // Store state in session instead of in-memory Map
-  // This works in serverless environments where different instances handle different requests
-  if (!req.session) {
-    return res
-      .status(500)
-      .json({ok: false, error: 'Session middleware not configured'});
-  }
-
   const state = crypto.randomBytes(32).toString('hex');
-  req.session.oauthState = state;
-  req.session.oauthStateTimestamp = Date.now();
+  const timestamp = Date.now();
+
+  // Create signed state that we'll use to verify the callback
+  // This works without MongoDB - we verify using HMAC signature
+  const signedState = createSignedState(state, timestamp);
 
   console.log('Starting OAuth flow:', {
     sessionId: req.sessionID,
     state: state,
-    timestamp: req.session.oauthStateTimestamp,
+    timestamp: timestamp,
     cookie: req.headers.cookie,
   });
 
-  const url = getAuthUrl(state);
+  // Set state in a cookie (works without MongoDB)
+  // This is the primary method - session is a backup
+  const isSecure =
+    process.env.NODE_ENV === 'production' ||
+    !!process.env.VERCEL ||
+    !!process.env.VERCEL_ENV;
 
-  // Manually save session to ensure it persists in Mongo before redirecting (critical for serverless)
-  // Use a promise-based approach with longer timeout for cold starts
-  // CRITICAL: OAuth state MUST be saved to session, or OAuth flow will fail
-  const saveStartTime = Date.now();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        const duration = Date.now() - saveStartTime;
-        console.error('Session save timeout during signin:', {
-          duration,
-          sessionId: req.sessionID,
-          state: state,
-        });
-        reject(new Error(`Session save timeout after ${duration}ms`));
-      }, 10000); // Increased to 10 seconds for cold starts
+  res.cookie('oauth_state', signedState, {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: isSecure ? 'none' : 'lax',
+    maxAge: 10 * 60 * 1000, // 10 minutes
+    path: '/',
+  });
 
-      console.log('Attempting to save session during signin:', {
-        sessionId: req.sessionID,
-        state: state,
-      });
-
-      req.session.save(err => {
-        clearTimeout(timeoutId);
-        const duration = Date.now() - saveStartTime;
-        if (err) {
-          console.error('Session save error during signin:', {
-            error: err,
-            duration,
-            sessionId: req.sessionID,
-            state: state,
-            errorMessage: err instanceof Error ? err.message : String(err),
-          });
-          reject(err);
-        } else {
-          console.log('Session saved successfully during signin:', {
-            duration,
-            sessionId: req.sessionID,
-            state: state,
-          });
-          resolve();
-        }
-      });
-    });
-    console.log('Redirecting to Google OAuth:', url.substring(0, 100) + '...');
-    return res.redirect(url);
-  } catch (saveError) {
-    const duration = Date.now() - saveStartTime;
-    console.error('Failed to save session during signin:', {
-      error: saveError,
-      duration,
-      sessionId: req.sessionID,
-      state: state,
-    });
-    // OAuth state was not saved - OAuth flow will fail if we redirect
-    // Return error so user can retry instead of breaking the flow
-    return res.status(500).json({
-      ok: false,
-      error: 'Failed to initialize authentication. Please try again.',
+  // Also try to save to session as backup (non-blocking)
+  if (req.session) {
+    req.session.oauthState = state;
+    req.session.oauthStateTimestamp = timestamp;
+    // Don't await - let it save in background
+    req.session.save(err => {
+      if (err) {
+        console.warn('Session save failed (using cookie fallback):', err);
+      } else {
+        console.log('Session saved successfully as backup');
+      }
     });
   }
+
+  const url = getAuthUrl(state);
+  console.log('Redirecting to Google OAuth (using cookie-based state)');
+  return res.redirect(url);
 });
 
 // Handles the auth redirect and exchanges the code for an access token
@@ -98,24 +108,67 @@ authRouter.get('/callback', async (req, res) => {
   const code = req.query.code as string;
   const state = req.query.state as string;
 
-  if (!req.session) {
-    return res
-      .status(500)
-      .json({ok: false, error: 'Session middleware not configured'});
+  if (!code) {
+    return res.status(400).json({ok: false, error: 'Missing auth code'});
   }
 
-  // Validate state from session instead of in-memory Map
-  const sessionState = req.session.oauthState;
-  const stateTimestamp = req.session.oauthStateTimestamp;
+  if (!state) {
+    return res.status(400).json({ok: false, error: 'Missing state parameter'});
+  }
 
-  // Check if state matches
-  if (!state || !sessionState || state !== sessionState) {
-    console.error('State mismatch:', {
-      received: state,
-      expected: sessionState,
-      hasSessionState: !!sessionState,
-      sessionId: req.sessionID,
-      sessionData: JSON.stringify(req.session),
+  // Try cookie-based state verification first (primary method)
+  const signedStateCookie = req.cookies?.oauth_state;
+  let stateValid = false;
+  let stateTimestamp: number | undefined;
+
+  if (signedStateCookie) {
+    const verified = verifySignedState(signedStateCookie);
+    if (verified && verified.state === state) {
+      stateValid = true;
+      stateTimestamp = verified.timestamp;
+      console.log('State verified via cookie:', {
+        state: state.substring(0, 8) + '...',
+        timestamp: stateTimestamp,
+      });
+    } else {
+      console.warn('Cookie state verification failed:', {
+        hasVerified: !!verified,
+        stateMatch: verified ? verified.state === state : false,
+      });
+    }
+  }
+
+  // Fallback to session-based state verification
+  if (!stateValid && req.session) {
+    const sessionState = req.session.oauthState;
+    const sessionTimestamp = req.session.oauthStateTimestamp;
+
+    if (sessionState && sessionState === state) {
+      stateValid = true;
+      stateTimestamp = sessionTimestamp;
+      console.log('State verified via session (fallback):', {
+        state: state.substring(0, 8) + '...',
+        timestamp: stateTimestamp,
+      });
+    }
+  }
+
+  // Clear state from both cookie and session
+  res.clearCookie('oauth_state', {path: '/'});
+  if (req.session) {
+    delete req.session.oauthState;
+    delete req.session.oauthStateTimestamp;
+  }
+
+  if (!stateValid) {
+    console.error('State verification failed:', {
+      receivedState: state.substring(0, 8) + '...',
+      hasCookie: !!signedStateCookie,
+      hasSession: !!req.session,
+      sessionState: req.session?.oauthState
+        ? req.session.oauthState.substring(0, 8) + '...'
+        : 'none',
+      cookies: Object.keys(req.cookies || {}),
     });
     return res.status(400).json({ok: false, error: 'Invalid state parameter'});
   }
@@ -128,18 +181,7 @@ authRouter.get('/callback', async (req, res) => {
       tenMinutesAgo,
       age: stateTimestamp ? Date.now() - stateTimestamp : 'unknown',
     });
-    // Clear invalid state
-    delete req.session.oauthState;
-    delete req.session.oauthStateTimestamp;
     return res.status(400).json({ok: false, error: 'State parameter expired'});
-  }
-
-  // Clear state from session after validation
-  delete req.session.oauthState;
-  delete req.session.oauthStateTimestamp;
-
-  if (!code) {
-    return res.status(400).json({ok: false, error: 'Missing auth code'});
   }
 
   try {
