@@ -53,13 +53,14 @@ const daysAgo = (days: number) =>
 
 /**
  * 10 realistic mock emails for demo purposes
+ * Names reflect diverse backgrounds and inclusive representation
  */
 export const mockEmails: gmail_v1.Schema$Message[] = [
   createMockMessage(
     'mock_001',
     'thread_001',
     'Q4 Planning Meeting - Action Items',
-    'Sarah Chen <sarah.chen@company.com>',
+    'Priya Sharma <priya.sharma@company.com>',
     'team@company.com',
     "Hi team, Following up on yesterday's Q4 planning session. Here are the key action items we discussed: 1) Finalize budget proposals by Friday, 2) Schedule one-on-ones with stakeholders...",
     hoursAgo(1),
@@ -70,7 +71,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'mock_002',
     'thread_002',
     'Re: Project Deadline Extension Request',
-    'Michael Torres <m.torres@client.org>',
+    'Marcus Johnson <marcus.j@client.org>',
     'me@company.com',
     "Thanks for the update. We've reviewed the timeline and can accommodate the two-week extension. Please ensure the revised milestones are documented in the shared tracker...",
     hoursAgo(3),
@@ -92,7 +93,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'mock_004',
     'thread_004',
     'Invoice #INV-2024-0892 - Payment Confirmation',
-    'Billing <billing@vendor.io>',
+    'Fatima Al-Hassan <fatima@vendor.io>',
     'accounts@company.com',
     'This email confirms your payment of $2,450.00 for Invoice #INV-2024-0892 has been received and processed. Thank you for your business. Transaction ID: TXN-8847291...',
     hoursAgo(8),
@@ -103,7 +104,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'mock_005',
     'thread_005',
     'Design Review: Homepage Redesign v2',
-    'Alex Kim <alex.kim@design.co>',
+    'Jordan Rivera <jordan.r@design.co>',
     'me@company.com, design-team@company.com',
     "Hey everyone, I've uploaded the revised homepage mockups to Figma. The main changes include: updated hero section with video background, simplified navigation, new color palette...",
     hoursAgo(12),
@@ -114,7 +115,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'mock_006',
     'thread_006',
     'Reminder: Team Offsite Next Week',
-    'HR Department <hr@company.com>',
+    'Kenji Tanaka <kenji.t@company.com>',
     'all-staff@company.com',
     "Friendly reminder that our team offsite is scheduled for next Thursday and Friday at the Riverside Conference Center. Please confirm your attendance and dietary preferences by EOD Monday...",
     daysAgo(1),
@@ -125,7 +126,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'mock_007',
     'thread_007',
     'Re: API Integration Questions',
-    'David Park <david@techpartner.com>',
+    'Amara Okonkwo <amara@techpartner.com>',
     'me@company.com',
     "Good question! For the webhook authentication, you'll need to include the API key in the Authorization header. Here's an example: Authorization: Bearer sk_live_... Let me know if you need more details.",
     daysAgo(1),
@@ -138,7 +139,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'New Comment on Document: "2024 Strategy"',
     'Google Docs <comments-noreply@google.com>',
     'me@company.com',
-    'Jennifer Walsh left a comment on "2024 Strategy": "I think we should reconsider the timeline for Phase 2. The current estimate seems optimistic given our resource constraints..."',
+    'Elena Rodriguez left a comment on "2024 Strategy": "I think we should reconsider the timeline for Phase 2. The current estimate seems optimistic given our resource constraints..."',
     daysAgo(2),
     false,
     false,
@@ -158,7 +159,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'mock_010',
     'thread_010',
     'GitHub: [company/repo] Pull request merged',
-    'GitHub <notifications@github.com>',
+    'Wei Chen <wei.chen@github.com>',
     'me@company.com',
     'Merged #847: Fix authentication bug in login flow. This pull request fixes the issue where users were occasionally logged out during session refresh. Changes include updated token handling...',
     daysAgo(4),
