@@ -1,5 +1,18 @@
-import {Db, MongoClient} from 'mongodb';
-import {dbConfig, validateDbConfig} from './config.js';
+import { Db, MongoClient } from 'mongodb';
+import { dbConfig, validateDbConfig } from './config.js';
+
+/**
+ * Type guard for error objects that may have code and name properties.
+ */
+interface ErrorWithCode {
+  code?: string | number;
+  name?: string;
+  message?: string;
+}
+
+function isErrorWithCode(error: unknown): error is ErrorWithCode {
+  return typeof error === 'object' && error !== null;
+}
 
 /**
  * Singleton class managing MongoDB database connections.
@@ -92,7 +105,9 @@ export class DatabaseConnection {
         // MongoDB's connect() is idempotent, but if a previous connection failed,
         // we should create a fresh client to avoid issues with stale state
         if (!this.client) {
-          console.log('[Database Connection] Creating new MongoClient instance');
+          console.log(
+            '[Database Connection] Creating new MongoClient instance',
+          );
           this.client = new MongoClient(dbConfig.uri, dbConfig.options);
           this.setupEventListeners();
         } else {
@@ -133,13 +148,14 @@ export class DatabaseConnection {
         lastError = error as Error;
         retryCount++;
 
+        const errorWithCode = isErrorWithCode(error) ? error : null;
         const errorDetails = {
           attempt: retryCount,
           errorType:
             error instanceof Error ? error.constructor.name : typeof error,
           message: error instanceof Error ? error.message : String(error),
-          code: (error as any)?.code,
-          name: (error as any)?.name,
+          code: errorWithCode?.code,
+          name: errorWithCode?.name,
         };
 
         console.error(
@@ -357,11 +373,12 @@ export class DatabaseConnection {
 
       return true;
     } catch (error) {
+      const errorWithCode = isErrorWithCode(error) ? error : null;
       const errorDetails = {
         errorType:
           error instanceof Error ? error.constructor.name : typeof error,
         message: error instanceof Error ? error.message : String(error),
-        code: (error as any)?.code,
+        code: errorWithCode?.code,
       };
       console.error('[Database Connection] Health check failed:', errorDetails);
 
@@ -370,7 +387,7 @@ export class DatabaseConnection {
         error instanceof Error &&
         (error.message.includes('connection') ||
           error.message.includes('timeout') ||
-          (error as any)?.code === 'ECONNREFUSED')
+          errorWithCode?.code === 'ECONNREFUSED')
       ) {
         console.warn(
           '[Database Connection] Connection appears to be lost, clearing state',

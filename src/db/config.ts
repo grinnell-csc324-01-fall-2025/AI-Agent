@@ -31,12 +31,12 @@ const baseOptions = {
   minPoolSize: parseInt(process.env.MONGODB_MIN_POOL_SIZE || '0', 10),
   connectTimeoutMS: parseInt(
     process.env.MONGODB_CONNECT_TIMEOUT_MS ||
-    (isServerless ? '30000' : '10000'),
+      (isServerless ? '30000' : '10000'),
     10,
   ),
   serverSelectionTimeoutMS: parseInt(
     process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS ||
-    (isServerless ? '30000' : '5000'),
+      (isServerless ? '30000' : '5000'),
     10,
   ),
   socketTimeoutMS: parseInt(

@@ -1,6 +1,6 @@
-import {google, calendar_v3} from 'googleapis';
-import {getOAuth2ClientForUser} from './client.js';
-import {NormalizedEvent} from '../types/google.js';
+import { calendar_v3, google } from 'googleapis';
+import { NormalizedEvent } from '../types/google.js';
+import { getOAuth2ClientForUser } from './client.js';
 
 const RETRYABLE_ERROR_CODES = [429, 500, 503, 504];
 
@@ -50,7 +50,7 @@ export async function fetchNormalizedEvents(
   const nowIso = new Date().toISOString();
 
   // Retry logic for transient failures
-  let lastError: any = null;
+  let lastError: unknown = null;
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       if (attempt > 0) {
@@ -81,17 +81,23 @@ export async function fetchNormalizedEvents(
       );
 
       return items.map(mapEvent);
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
+      interface ErrorWithCode {
+        code?: string | number;
+        message?: string;
+        response?: {status?: number; data?: {error?: unknown}};
+      }
+      const errorWithCode = error as ErrorWithCode;
       const errorDetails = {
         userId,
         attempt: attempt + 1,
         retryCount: retryCount + 1,
-        status: error?.response?.status,
-        message: error?.message,
-        code: error?.code,
-        errors: error?.response?.data?.error,
-        responseData: error?.response?.data,
+        status: errorWithCode?.response?.status,
+        message: errorWithCode?.message,
+        code: errorWithCode?.code,
+        errors: errorWithCode?.response?.data?.error,
+        responseData: errorWithCode?.response?.data,
       };
 
       console.error(
@@ -100,12 +106,21 @@ export async function fetchNormalizedEvents(
       );
 
       // Don't retry on certain errors
-      if (error?.code === 400 || error?.code === 401 || error?.code === 403) {
+      if (
+        errorWithCode?.code === 400 ||
+        errorWithCode?.code === 401 ||
+        errorWithCode?.code === 403
+      ) {
         break; // Exit retry loop for non-retryable errors
       }
 
       // Retry on transient errors if we haven't exceeded max retries
-      if (RETRYABLE_ERROR_CODES.includes(error?.code) && attempt < retryCount) {
+      if (
+        errorWithCode?.code &&
+        typeof errorWithCode.code === 'number' &&
+        RETRYABLE_ERROR_CODES.includes(errorWithCode.code) &&
+        attempt < retryCount
+      ) {
         continue; // Continue to next retry attempt
       }
 
@@ -115,9 +130,14 @@ export async function fetchNormalizedEvents(
   }
 
   // Handle final error after all retries
+  interface LastError {
+    message?: string;
+    response?: {data?: {error?: {message?: string}}};
+  }
+  const lastErrorTyped = lastError as LastError;
   const errorMessage =
-    lastError?.message ||
-    lastError?.response?.data?.error?.message ||
+    lastErrorTyped?.message ||
+    lastErrorTyped?.response?.data?.error?.message ||
     'Unknown error occurred while fetching events from Google Calendar';
   throw new Error(
     `Failed to fetch events from Google Calendar: ${errorMessage}`,

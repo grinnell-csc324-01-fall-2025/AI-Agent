@@ -1,7 +1,7 @@
-import {Auth, google} from 'googleapis';
-import {config} from '../config.js';
-import {GoogleTokens} from '../db/models/User.js';
-import {UserRepository} from '../db/repositories/UserRepository.js';
+import { Auth, google } from 'googleapis';
+import { config } from '../config.js';
+import { GoogleTokens } from '../db/models/User.js';
+import { UserRepository } from '../db/repositories/UserRepository.js';
 
 export const oauth2Client = new google.auth.OAuth2(
   config.google.clientId,
@@ -51,17 +51,23 @@ export async function getOAuth2ClientForUser(
   let user;
   try {
     user = await userRepo.findById(userId);
-  } catch (dbError: any) {
+  } catch (dbError: unknown) {
+    interface ErrorWithMessage {
+      message?: string;
+      constructor?: {name?: string};
+      stack?: string;
+    }
+    const errorWithMessage = dbError as ErrorWithMessage;
     console.error(
       `[OAuth Client] Database error while fetching user ${userId}:`,
       {
-        errorType: dbError?.constructor?.name,
-        message: dbError?.message,
-        stack: dbError?.stack,
+        errorType: errorWithMessage?.constructor?.name,
+        message: errorWithMessage?.message,
+        stack: errorWithMessage?.stack,
       },
     );
     throw new Error(
-      `Failed to fetch user from database: ${dbError?.message || 'Unknown database error'}`,
+      `Failed to fetch user from database: ${errorWithMessage?.message || 'Unknown database error'}`,
     );
   }
 
@@ -118,7 +124,7 @@ export async function getOAuth2ClientForUser(
 
     // Retry logic with exponential backoff
     const maxRetries = 3;
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -156,11 +162,17 @@ export async function getOAuth2ClientForUser(
         }
 
         // Calculate expiry_date from expires_in if provided
+        // Google OAuth credentials may have expires_in (seconds) or expiry_date (milliseconds timestamp)
+        interface CredentialsWithExpiresIn {
+          expires_in?: number;
+          expiry_date?: number;
+        }
+        const credentialsWithExpiry = credentials as CredentialsWithExpiresIn;
         let newExpiryDate: number;
-        if (credentials.expiry_date) {
-          newExpiryDate = credentials.expiry_date;
-        } else if ((credentials as any).expires_in) {
-          newExpiryDate = Date.now() + (credentials as any).expires_in * 1000;
+        if (credentialsWithExpiry.expiry_date) {
+          newExpiryDate = credentialsWithExpiry.expiry_date;
+        } else if (credentialsWithExpiry.expires_in) {
+          newExpiryDate = Date.now() + credentialsWithExpiry.expires_in * 1000;
         } else {
           newExpiryDate = Date.now() + 3600 * 1000; // Default 1 hour
         }
@@ -187,29 +199,42 @@ export async function getOAuth2ClientForUser(
           await userRepo.updateTokens(userId, newTokens);
           tokens = newTokens;
           break; // Success, exit retry loop
-        } catch (updateError: any) {
+        } catch (updateError: unknown) {
+          interface ErrorWithDetails {
+            constructor?: {name?: string};
+            message?: string;
+            stack?: string;
+          }
+          const errorWithDetails = updateError as ErrorWithDetails;
           console.error(
             `[OAuth Client] Failed to update tokens in database for user ${userId}:`,
             {
-              errorType: updateError?.constructor?.name,
-              message: updateError?.message,
-              stack: updateError?.stack,
+              errorType: errorWithDetails?.constructor?.name,
+              message: errorWithDetails?.message,
+              stack: errorWithDetails?.stack,
             },
           );
           throw new Error(
-            `Failed to save refreshed tokens to database: ${updateError?.message || 'Unknown error'}`,
+            `Failed to save refreshed tokens to database: ${errorWithDetails?.message || 'Unknown error'}`,
           );
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error;
+        interface ErrorWithDetails {
+          constructor?: {name?: string};
+          message?: string;
+          code?: string | number;
+          response?: {data?: unknown};
+        }
+        const errorWithDetails = error as ErrorWithDetails;
         const errorDetails = {
           userId,
           attempt,
           maxRetries,
-          errorType: error?.constructor?.name,
-          message: error?.message,
-          code: error?.code,
-          response: error?.response?.data,
+          errorType: errorWithDetails?.constructor?.name,
+          message: errorWithDetails?.message,
+          code: errorWithDetails?.code,
+          response: errorWithDetails?.response?.data,
         };
 
         console.error(
@@ -218,11 +243,14 @@ export async function getOAuth2ClientForUser(
         );
 
         // Don't retry on certain errors
-        if (error?.code === 400 || error?.message?.includes('invalid_grant')) {
+        if (
+          errorWithDetails?.code === 400 ||
+          errorWithDetails?.message?.includes('invalid_grant')
+        ) {
           throw new Error(
             'Refresh token is invalid or revoked. Please re-authenticate.',
           );
-        } else if (error?.code === 401) {
+        } else if (errorWithDetails?.code === 401) {
           throw new Error(
             'Authentication failed during token refresh. Please re-authenticate.',
           );
@@ -241,13 +269,21 @@ export async function getOAuth2ClientForUser(
 
     // If we exhausted all retries, throw the last error
     if (lastError) {
+      interface ErrorWithDetails {
+        constructor?: {name?: string};
+        message?: string;
+        code?: string | number;
+        response?: {data?: unknown};
+        stack?: string;
+      }
+      const errorWithDetails = lastError as ErrorWithDetails;
       const errorDetails = {
         userId,
-        errorType: lastError?.constructor?.name,
-        message: lastError?.message,
-        code: lastError?.code,
-        response: lastError?.response?.data,
-        stack: lastError?.stack,
+        errorType: errorWithDetails?.constructor?.name,
+        message: errorWithDetails?.message,
+        code: errorWithDetails?.code,
+        response: errorWithDetails?.response?.data,
+        stack: errorWithDetails?.stack,
       };
 
       console.error(
@@ -255,7 +291,7 @@ export async function getOAuth2ClientForUser(
         errorDetails,
       );
       throw new Error(
-        `Token refresh failed after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}. Please re-authenticate.`,
+        `Token refresh failed after ${maxRetries} attempts: ${errorWithDetails?.message || 'Unknown error'}. Please re-authenticate.`,
       );
     }
   }
@@ -308,17 +344,23 @@ export async function getOAuth2ClientForUser(
 
   try {
     client.setCredentials(credentials);
-  } catch (setError: any) {
+  } catch (setError: unknown) {
+    interface ErrorWithDetails {
+      constructor?: {name?: string};
+      message?: string;
+      stack?: string;
+    }
+    const errorWithDetails = setError as ErrorWithDetails;
     console.error(
       `[OAuth Client] Failed to set credentials on OAuth client for user ${userId}:`,
       {
-        errorType: setError?.constructor?.name,
-        message: setError?.message,
-        stack: setError?.stack,
+        errorType: errorWithDetails?.constructor?.name,
+        message: errorWithDetails?.message,
+        stack: errorWithDetails?.stack,
       },
     );
     throw new Error(
-      `Failed to configure OAuth client: ${setError?.message || 'Unknown error'}`,
+      `Failed to configure OAuth client: ${errorWithDetails?.message || 'Unknown error'}`,
     );
   }
 

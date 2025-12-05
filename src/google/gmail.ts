@@ -1,5 +1,5 @@
-import {gmail_v1, google} from 'googleapis';
-import {getOAuth2ClientForUser} from './client.js';
+import { gmail_v1, google } from 'googleapis';
+import { getOAuth2ClientForUser } from './client.js';
 
 const MAX_RETRIES = 3;
 const RETRYABLE_ERROR_CODES = [429, 500, 503, 504];
@@ -22,13 +22,20 @@ export async function listMessages(
   let auth;
   try {
     auth = await getOAuth2ClientForUser(userId);
-  } catch (authError: any) {
+  } catch (authError: unknown) {
+    interface ErrorWithDetails {
+      constructor?: {name?: string};
+      message?: string;
+      code?: string | number;
+      stack?: string;
+    }
+    const errorWithDetails = authError as ErrorWithDetails;
     const errorDetails = {
       userId,
-      errorType: authError?.constructor?.name,
-      message: authError?.message,
-      code: authError?.code,
-      stack: authError?.stack,
+      errorType: errorWithDetails?.constructor?.name,
+      message: errorWithDetails?.message,
+      code: errorWithDetails?.code,
+      stack: errorWithDetails?.stack,
     };
     console.error(
       `[Gmail API] [${new Date().toISOString()}] Failed to get OAuth client for user ${userId}:`,
@@ -52,7 +59,7 @@ export async function listMessages(
   const gmail = google.gmail({version: 'v1', auth});
 
   // Retry logic for transient failures
-  let lastError: any = null;
+  let lastError: unknown = null;
   for (let attempt = 0; attempt <= retryCount; attempt++) {
     try {
       if (attempt > 0) {
@@ -97,13 +104,19 @@ export async function listMessages(
             }),
           ]);
           return m.data;
-        } catch (msgError: any) {
+        } catch (msgError: unknown) {
+          interface ErrorWithDetails {
+            constructor?: {name?: string};
+            message?: string;
+            code?: string | number;
+          }
+          const errorWithDetails = msgError as ErrorWithDetails;
           console.warn(
             `[Gmail API] Failed to fetch message ${msg.id} for user ${userId}:`,
             {
-              errorType: msgError?.constructor?.name,
-              message: msgError?.message,
-              code: msgError?.code,
+              errorType: errorWithDetails?.constructor?.name,
+              message: errorWithDetails?.message,
+              code: errorWithDetails?.code,
             },
           );
           return null; // Skip this message but continue with others
@@ -120,12 +133,13 @@ export async function listMessages(
         .map(r => r.value);
 
       // Validate message structure
-      const validMessages = successfulMessages.filter((msg: any) => {
+      const validMessages = successfulMessages.filter((msg: unknown) => {
         if (!msg || typeof msg !== 'object') {
           console.warn('[Gmail API] Invalid message object found:', msg);
           return false;
         }
-        if (!msg.id) {
+        const msgTyped = msg as {id?: string};
+        if (!msgTyped.id) {
           console.warn('[Gmail API] Message missing ID:', msg);
           return false;
         }
@@ -137,17 +151,23 @@ export async function listMessages(
         `[Gmail API] [${new Date().toISOString()}] Successfully fetched ${validMessages.length} messages for user ${userId} (${duration}ms)`,
       );
       return validMessages;
-    } catch (error: any) {
+    } catch (error: unknown) {
       lastError = error;
+      interface ErrorWithCode {
+        code?: string | number;
+        message?: string;
+        response?: {status?: number; data?: {error?: unknown}};
+      }
+      const errorWithCode = error as ErrorWithCode;
       const errorDetails = {
         userId,
         attempt: attempt + 1,
         retryCount: retryCount + 1,
-        status: error?.response?.status,
-        message: error?.message,
-        code: error?.code,
-        errors: error?.response?.data?.error,
-        responseData: error?.response?.data,
+        status: errorWithCode?.response?.status,
+        message: errorWithCode?.message,
+        code: errorWithCode?.code,
+        errors: errorWithCode?.response?.data?.error,
+        responseData: errorWithCode?.response?.data,
       };
 
       console.error(
@@ -156,12 +176,21 @@ export async function listMessages(
       );
 
       // Don't retry on certain errors
-      if (error?.code === 400 || error?.code === 401 || error?.code === 403) {
+      if (
+        errorWithCode?.code === 400 ||
+        errorWithCode?.code === 401 ||
+        errorWithCode?.code === 403
+      ) {
         break; // Exit retry loop for non-retryable errors
       }
 
       // Retry on transient errors if we haven't exceeded max retries
-      if (RETRYABLE_ERROR_CODES.includes(error?.code) && attempt < retryCount) {
+      if (
+        errorWithCode?.code &&
+        typeof errorWithCode.code === 'number' &&
+        RETRYABLE_ERROR_CODES.includes(errorWithCode.code) &&
+        attempt < retryCount
+      ) {
         continue; // Continue to next retry attempt
       }
 
@@ -178,12 +207,18 @@ export async function listMessages(
     );
   }
 
+  interface ErrorWithCode {
+    code?: string | number;
+    message?: string;
+    response?: {status?: number; data?: {error?: {message?: string}}};
+  }
+  const errorWithCode = error as ErrorWithCode;
   const errorDetails = {
     userId,
-    status: error?.response?.status,
-    message: error?.message,
-    code: error?.code,
-    errors: error?.response?.data?.error,
+    status: errorWithCode?.response?.status,
+    message: errorWithCode?.message,
+    code: errorWithCode?.code,
+    errors: errorWithCode?.response?.data?.error,
   };
 
   console.error(
@@ -192,27 +227,27 @@ export async function listMessages(
   );
 
   // Provide helpful error messages for common issues
-  if (error?.code === 403) {
+  if (errorWithCode?.code === 403) {
     if (
-      error?.message?.includes('unregistered callers') ||
-      error?.response?.data?.error?.message?.includes('API not enabled')
+      errorWithCode?.message?.includes('unregistered callers') ||
+      errorWithCode?.response?.data?.error?.message?.includes('API not enabled')
     ) {
       throw new Error(
         'Gmail API is not enabled. Please enable it in Google Cloud Console: https://console.cloud.google.com/apis/library/gmail.googleapis.com',
       );
     } else if (
-      error?.message?.includes('insufficient permissions') ||
-      error?.response?.data?.error?.message?.includes('permission')
+      errorWithCode?.message?.includes('insufficient permissions') ||
+      errorWithCode?.response?.data?.error?.message?.includes('permission')
     ) {
       throw new Error(
         'Insufficient permissions to access Gmail. Please ensure the app has the required Gmail scopes and re-authenticate.',
       );
     } else {
       throw new Error(
-        `Access denied to Gmail API (403). ${error?.message || error?.response?.data?.error?.message || 'Please check your permissions and API settings.'}`,
+        `Access denied to Gmail API (403). ${errorWithCode?.message || errorWithCode?.response?.data?.error?.message || 'Please check your permissions and API settings.'}`,
       );
     }
-  } else if (error?.code === 401) {
+  } else if (errorWithCode?.code === 401) {
     // If we get a 401, try refreshing token once more
     if (retryCount < MAX_RETRIES) {
       console.log(
@@ -220,12 +255,17 @@ export async function listMessages(
       );
       try {
         return listMessages(userId, retryCount + 1);
-      } catch (refreshError: any) {
+      } catch (refreshError: unknown) {
+        interface RefreshError {
+          constructor?: {name?: string};
+          message?: string;
+        }
+        const refreshErrorWithDetails = refreshError as RefreshError;
         console.error(
           `[Gmail API] Failed to retry after 401 for user ${userId}:`,
           {
-            errorType: refreshError?.constructor?.name,
-            message: refreshError?.message,
+            errorType: refreshErrorWithDetails?.constructor?.name,
+            message: refreshErrorWithDetails?.message,
           },
         );
         throw new Error(
@@ -236,14 +276,14 @@ export async function listMessages(
     throw new Error(
       'Authentication failed. Please re-authenticate to access Gmail.',
     );
-  } else if (error?.code === 429) {
+  } else if (errorWithCode?.code === 429) {
     throw new Error(
       'Rate limit exceeded for Gmail API. Please try again later.',
     );
   } else if (
-    error?.code === 500 ||
-    error?.code === 503 ||
-    error?.code === 504
+    errorWithCode?.code === 500 ||
+    errorWithCode?.code === 503 ||
+    errorWithCode?.code === 504
   ) {
     throw new Error(
       'Gmail API is temporarily unavailable. Please try again later.',
@@ -252,8 +292,8 @@ export async function listMessages(
 
   // For other errors, provide a detailed message
   const errorMessage =
-    error?.message ||
-    error?.response?.data?.error?.message ||
+    errorWithCode?.message ||
+    errorWithCode?.response?.data?.error?.message ||
     'Unknown error occurred while fetching messages from Gmail';
   throw new Error(`Failed to fetch messages from Gmail: ${errorMessage}`);
 }

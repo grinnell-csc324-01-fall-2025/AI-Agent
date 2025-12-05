@@ -1,8 +1,8 @@
-import {Router} from 'express';
-import {config} from '../config.js';
-import {GoogleTokens} from '../db/models/User.js';
-import {UserRepository} from '../db/repositories/UserRepository.js';
-import {getAuthUrl, getTokens} from '../google/client.js';
+import { Router } from 'express';
+import { config } from '../config.js';
+import { GoogleTokens } from '../db/models/User.js';
+import { UserRepository } from '../db/repositories/UserRepository.js';
+import { getAuthUrl, getTokens } from '../google/client.js';
 
 export const authRouter = Router();
 
@@ -238,12 +238,18 @@ authRouter.get('/callback', async (req, res) => {
 
     // Prepare tokens with proper typing
     // Calculate expiry_date from expires_in if provided, otherwise use expiry_date or default to 1 hour
+    // Google OAuth tokens may have expires_in (seconds) or expiry_date (milliseconds timestamp)
+    interface TokenWithExpiresIn {
+      expires_in?: number;
+      expiry_date?: number;
+    }
+    const tokenWithExpiry = tokens as TokenWithExpiresIn;
     let expiryDate: number;
-    if (tokens.expiry_date) {
-      expiryDate = tokens.expiry_date;
-    } else if ((tokens as any).expires_in) {
+    if (tokenWithExpiry.expiry_date) {
+      expiryDate = tokenWithExpiry.expiry_date;
+    } else if (tokenWithExpiry.expires_in) {
       // expires_in is in seconds, convert to milliseconds timestamp
-      expiryDate = Date.now() + (tokens as any).expires_in * 1000;
+      expiryDate = Date.now() + tokenWithExpiry.expires_in * 1000;
     } else {
       // Default to 1 hour if neither is provided
       expiryDate = Date.now() + 3600 * 1000;
@@ -297,9 +303,7 @@ authRouter.get('/callback', async (req, res) => {
       return res.redirect('/tabs/personal/index.html');
     } catch (saveError) {
       console.error('Failed to save session during callback:', saveError);
-      return res
-        .status(500)
-        .json({ok: false, error: 'Failed to save session'});
+      return res.status(500).json({ok: false, error: 'Failed to save session'});
     }
   } catch (e) {
     console.error('OAuth callback error:', e);
