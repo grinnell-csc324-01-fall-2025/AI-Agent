@@ -16,16 +16,19 @@ const isServerless =
 
 // Base options that apply to all connections
 const baseOptions = {
-  maxPoolSize: parseInt(process.env.MONGODB_MAX_POOL_SIZE || '10', 10),
-  minPoolSize: parseInt(process.env.MONGODB_MIN_POOL_SIZE || '2', 10),
+  maxPoolSize: parseInt(
+    process.env.MONGODB_MAX_POOL_SIZE || (isServerless ? '1' : '10'),
+    10,
+  ),
+  minPoolSize: parseInt(process.env.MONGODB_MIN_POOL_SIZE || '0', 10),
   connectTimeoutMS: parseInt(
     process.env.MONGODB_CONNECT_TIMEOUT_MS ||
-      (isServerless ? '30000' : '10000'),
+    (isServerless ? '30000' : '10000'),
     10,
   ),
   serverSelectionTimeoutMS: parseInt(
     process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS ||
-      (isServerless ? '30000' : '5000'),
+    (isServerless ? '30000' : '5000'),
     10,
   ),
   socketTimeoutMS: parseInt(
