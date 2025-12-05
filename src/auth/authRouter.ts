@@ -32,19 +32,41 @@ authRouter.get('/signin', async (req, res) => {
   const url = getAuthUrl(state);
 
   // Manually save session to ensure it persists in Mongo before redirecting (critical for serverless)
-  // Use a promise-based approach to ensure the save completes before redirect
+  // Use a promise-based approach with longer timeout for cold starts
+  // CRITICAL: OAuth state MUST be saved to session, or OAuth flow will fail
+  const saveStartTime = Date.now();
   try {
     await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        const duration = Date.now() - saveStartTime;
+        console.error('Session save timeout during signin:', {
+          duration,
+          sessionId: req.sessionID,
+          state: state,
+        });
+        reject(new Error(`Session save timeout after ${duration}ms`));
+      }, 10000); // Increased to 10 seconds for cold starts
+
+      console.log('Attempting to save session during signin:', {
+        sessionId: req.sessionID,
+        state: state,
+      });
+
       req.session.save(err => {
+        clearTimeout(timeoutId);
+        const duration = Date.now() - saveStartTime;
         if (err) {
           console.error('Session save error during signin:', {
             error: err,
+            duration,
             sessionId: req.sessionID,
             state: state,
+            errorMessage: err instanceof Error ? err.message : String(err),
           });
           reject(err);
         } else {
           console.log('Session saved successfully during signin:', {
+            duration,
             sessionId: req.sessionID,
             state: state,
           });
@@ -52,10 +74,22 @@ authRouter.get('/signin', async (req, res) => {
         }
       });
     });
+    console.log('Redirecting to Google OAuth:', url.substring(0, 100) + '...');
     return res.redirect(url);
   } catch (saveError) {
-    console.error('Failed to save session during signin:', saveError);
-    return res.status(500).json({ok: false, error: 'Failed to save session'});
+    const duration = Date.now() - saveStartTime;
+    console.error('Failed to save session during signin:', {
+      error: saveError,
+      duration,
+      sessionId: req.sessionID,
+      state: state,
+    });
+    // OAuth state was not saved - OAuth flow will fail if we redirect
+    // Return error so user can retry instead of breaking the flow
+    return res.status(500).json({
+      ok: false,
+      error: 'Failed to initialize authentication. Please try again.',
+    });
   }
 });
 
@@ -280,19 +314,41 @@ authRouter.get('/callback', async (req, res) => {
     req.session.userId = user._id.toString();
 
     // Manually save session to ensure userId persists before redirecting
-    // Use a promise-based approach to ensure the save completes before redirect
+    // Use a promise-based approach with longer timeout for cold starts
+    // CRITICAL: userId MUST be saved to session, or user will be logged out on next request
+    const saveStartTime = Date.now();
     try {
       await new Promise<void>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          const duration = Date.now() - saveStartTime;
+          console.error('Session save timeout during callback:', {
+            duration,
+            sessionId: req.sessionID,
+            userId: user._id.toString(),
+          });
+          reject(new Error(`Session save timeout after ${duration}ms`));
+        }, 10000); // Increased to 10 seconds for cold starts
+
+        console.log('Attempting to save session during callback:', {
+          sessionId: req.sessionID,
+          userId: user._id.toString(),
+        });
+
         req.session.save(err => {
+          clearTimeout(timeoutId);
+          const duration = Date.now() - saveStartTime;
           if (err) {
             console.error('Session save error during callback:', {
               error: err,
+              duration,
               sessionId: req.sessionID,
               userId: user._id.toString(),
+              errorMessage: err instanceof Error ? err.message : String(err),
             });
             reject(err);
           } else {
             console.log('Session saved successfully during callback:', {
+              duration,
               sessionId: req.sessionID,
               userId: user._id.toString(),
             });
@@ -302,8 +358,20 @@ authRouter.get('/callback', async (req, res) => {
       });
       return res.redirect('/tabs/personal/index.html');
     } catch (saveError) {
-      console.error('Failed to save session during callback:', saveError);
-      return res.status(500).json({ok: false, error: 'Failed to save session'});
+      const duration = Date.now() - saveStartTime;
+      console.error('Failed to save session during callback:', {
+        error: saveError,
+        duration,
+        sessionId: req.sessionID,
+        userId: user._id.toString(),
+      });
+      // userId was not saved - user will be logged out on next request
+      // Return error so user can retry instead of creating broken auth state
+      return res.status(500).json({
+        ok: false,
+        error:
+          'Authentication succeeded but failed to create session. Please sign in again.',
+      });
     }
   } catch (e) {
     console.error('OAuth callback error:', e);

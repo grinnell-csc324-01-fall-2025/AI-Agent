@@ -1,26 +1,65 @@
-import { connect } from '../src/db/connection.js';
+import { connect, getClientAsync } from '../src/db/connection.js';
 import { app } from '../src/server.js';
 
-import express from 'express';
-
 // Initialize database connection for serverless environment
-// This runs once per cold start
-let exportedApp = app;
+// Start connection in background but don't block
+let connectionReady = false;
+let connectionPromise: Promise<void> | null = null;
 
-connect().catch(err => {
-  console.error('Database connection failed:', err);
-  // Create a fallback app that always returns 500 if DB fails
-  const fallbackApp = express();
-  fallbackApp.use((_req, res) => {
-    res.status(500).json({
-      error: 'Database connection failed',
-      timestamp: new Date().toISOString(),
+function ensureConnection(): Promise<void> {
+  if (connectionReady) {
+    return Promise.resolve();
+  }
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+  connectionPromise = connect()
+    .then(() => {
+      connectionReady = true;
+      console.log('[Vercel Handler] Database connection ready');
+    })
+    .catch(err => {
+      console.error('[Vercel Handler] Initial database connection failed:', err);
+      connectionReady = false;
+      connectionPromise = null; // Allow retry
+      throw err;
     });
-  });
-  exportedApp = fallbackApp;
+  return connectionPromise;
+}
+
+// Start connection attempt in background
+ensureConnection().catch(() => {
+  // Connection failed, will retry on first request
 });
 
 export default async (req: any, res: any) => {
-  // Ensure we use the correct app instance (either main app or fallback)
-  return exportedApp(req, res);
+  // Ensure database connection is ready before handling request
+  // This is critical for session middleware to work
+  const connectionStartTime = Date.now();
+  try {
+    console.log('[Vercel Handler] Ensuring database connection before request...');
+    await ensureConnection();
+    // Also ensure MongoStore has the client ready
+    const client = await getClientAsync();
+    const connectionDuration = Date.now() - connectionStartTime;
+    console.log('[Vercel Handler] Database connection ready:', {
+      duration: connectionDuration,
+      path: req.url,
+    });
+    if (connectionDuration > 5000) {
+      console.warn(
+        '[Vercel Handler] Database connection took longer than 5 seconds',
+      );
+    }
+  } catch (err) {
+    const connectionDuration = Date.now() - connectionStartTime;
+    console.error('[Vercel Handler] Database connection not ready:', {
+      error: err,
+      duration: connectionDuration,
+      path: req.url,
+    });
+    // Still try to handle request - some routes might work without DB
+    // But session-dependent routes will fail gracefully
+  }
+  return app(req, res);
 };
