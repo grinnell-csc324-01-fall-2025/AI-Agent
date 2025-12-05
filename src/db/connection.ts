@@ -247,6 +247,22 @@ export class DatabaseConnection {
   }
 
   /**
+   * Asynchronously retrieves the MongoDB client instance, connecting if necessary.
+   * Useful for libraries that need the client directly (like connect-mongo).
+   * @returns Promise resolving to the MongoDB client instance
+   */
+  public async getClientAsync(): Promise<MongoClient> {
+    if (this.client && this.db) {
+      return this.client;
+    }
+    await this.connect();
+    if (!this.client) {
+      throw new Error('Failed to initialize MongoDB client');
+    }
+    return this.client;
+  }
+
+  /**
    * Gracefully disconnects from MongoDB.
    * Closes the client connection and clears internal state.
    */
@@ -352,6 +368,13 @@ export const getDbAsync = (): Promise<Db> => dbConnection.getDbAsync();
  * @returns true if connected, false otherwise
  */
 export const isConnected = (): boolean => dbConnection.isConnected();
+
+/**
+ * Asynchronously retrieves the MongoDB client instance.
+ * @returns Promise resolving to the MongoDB client instance
+ */
+export const getClientAsync = (): Promise<MongoClient> =>
+  dbConnection.getClientAsync();
 
 /**
  * Gracefully disconnects from MongoDB.
