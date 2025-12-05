@@ -59,7 +59,6 @@ export const dbConfig = {
       ...(currentIsMongoAtlas && {
         tls: true,
         tlsAllowInvalidCertificates: false,
-        tlsMinVersion: 'TLS1_2',
       }),
     };
     console.log('[DB Config] Connection options:', {
