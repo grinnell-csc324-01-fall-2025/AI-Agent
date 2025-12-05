@@ -32,30 +32,41 @@ authRouter.get('/signin', async (req, res) => {
   const url = getAuthUrl(state);
 
   // Manually save session to ensure it persists in Mongo before redirecting (critical for serverless)
-  // Use a promise-based approach to ensure the save completes before redirect
+  // Use a promise-based approach with timeout to prevent hanging
   try {
-    await new Promise<void>((resolve, reject) => {
-      req.session.save(err => {
-        if (err) {
-          console.error('Session save error during signin:', {
-            error: err,
-            sessionId: req.sessionID,
-            state: state,
-          });
-          reject(err);
-        } else {
-          console.log('Session saved successfully during signin:', {
-            sessionId: req.sessionID,
-            state: state,
-          });
-          resolve();
-        }
-      });
-    });
+    await Promise.race([
+      new Promise<void>((resolve, reject) => {
+        req.session.save(err => {
+          if (err) {
+            console.error('Session save error during signin:', {
+              error: err,
+              sessionId: req.sessionID,
+              state: state,
+            });
+            reject(err);
+          } else {
+            console.log('Session saved successfully during signin:', {
+              sessionId: req.sessionID,
+              state: state,
+            });
+            resolve();
+          }
+        });
+      }),
+      new Promise<never>((_, reject) => {
+        setTimeout(
+          () => reject(new Error('Session save timeout after 5 seconds')),
+          5000,
+        );
+      }),
+    ]);
     return res.redirect(url);
   } catch (saveError) {
     console.error('Failed to save session during signin:', saveError);
-    return res.status(500).json({ok: false, error: 'Failed to save session'});
+    // Still redirect even if session save fails - the state will be in the URL
+    // This prevents the user from being stuck on a timeout
+    console.warn('Redirecting despite session save error - OAuth state in URL');
+    return res.redirect(url);
   }
 });
 
