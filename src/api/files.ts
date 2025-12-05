@@ -1,9 +1,9 @@
-import type {Request, Response} from 'express';
-import {Router} from 'express';
-import {optionalAuth} from '../auth/middleware.js';
-import {isConnected} from '../db/connection.js';
-import {listRecentFiles} from '../google/drive.js';
-import {getMockFiles} from '../google/mockFiles.js';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
+import { optionalAuth } from '../auth/middleware.js';
+import { isConnected } from '../db/connection.js';
+import { listRecentFiles } from '../google/drive.js';
+import { getMockFiles } from '../google/mockFiles.js';
 
 export const router = Router();
 

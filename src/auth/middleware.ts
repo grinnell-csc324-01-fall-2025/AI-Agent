@@ -1,6 +1,6 @@
-import type {Request, Response, NextFunction} from 'express';
-import {isConnected} from '../db/connection.js';
-import {UserRepository} from '../db/repositories/UserRepository.js';
+import type { NextFunction, Request, Response } from 'express';
+import { isConnected } from '../db/connection.js';
+import { UserRepository } from '../db/repositories/UserRepository.js';
 
 /**
  * Express middleware that makes auth optional.

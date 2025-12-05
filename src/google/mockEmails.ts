@@ -128,7 +128,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Re: API Integration Questions',
     'Amara Okonkwo <amara@techpartner.com>',
     'me@company.com',
-    "Good question! For the webhook authentication, you'll need to include the API key in the Authorization header. Here's an example: Authorization: Bearer sk_live_... Let me know if you need more details.",
+    "Good question! For the webhook authentication, you'll need to include the API key in the Authorization header. Here's an example: Authorization: Bearer YOUR_API_KEY_HERE. Let me know if you need more details.",
     daysAgo(1),
     false,
     true, // starred
