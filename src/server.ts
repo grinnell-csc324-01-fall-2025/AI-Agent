@@ -1,4 +1,5 @@
 import MongoStore from 'connect-mongo';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
@@ -13,6 +14,9 @@ const app = express();
 
 // Trust proxy is required for secure cookies to work behind Vercel's load balancer
 app.set('trust proxy', 1);
+
+// Cookie parser middleware (must be before routes that use cookies)
+app.use(cookieParser());
 
 // Session middleware (must be before other middleware that uses sessions)
 // Determine if we're in a secure environment (HTTPS)
