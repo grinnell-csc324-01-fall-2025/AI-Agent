@@ -14,6 +14,14 @@ const isServerless =
     process.env.VERCEL_URL ||
     process.env.AWS_LAMBDA_FUNCTION_NAME);
 
+console.log('[DB Config] Environment check:', {
+  isServerless,
+  VERCEL: !!process.env.VERCEL,
+  VERCEL_ENV: process.env.VERCEL_ENV,
+  AWS_LAMBDA: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
+  NODE_ENV: process.env.NODE_ENV,
+});
+
 // Base options that apply to all connections
 const baseOptions = {
   maxPoolSize: parseInt(
@@ -44,18 +52,24 @@ export const dbConfig = {
   get options() {
     // Dynamically determine if current URI is Atlas
     const currentIsMongoAtlas = this.uri.startsWith('mongodb+srv://');
-    return {
+    const options = {
       ...baseOptions,
       // TLS/SSL configuration for MongoDB Atlas
       // For mongodb+srv:// connections, TLS is required
       ...(currentIsMongoAtlas && {
         tls: true,
         tlsAllowInvalidCertificates: false,
-        tlsAllowInvalidHostnames: false,
-        // Use system CA certificates
-        tlsCAFile: undefined,
+        tlsMinVersion: 'TLS1_2',
       }),
     };
+    console.log('[DB Config] Connection options:', {
+      uri: this.uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@'),
+      maxPoolSize: options.maxPoolSize,
+      minPoolSize: options.minPoolSize,
+      connectTimeoutMS: options.connectTimeoutMS,
+      isAtlas: currentIsMongoAtlas,
+    });
+    return options;
   },
 };
 
