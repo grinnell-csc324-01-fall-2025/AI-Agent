@@ -1,307 +1,493 @@
+// State
+let isAuthenticated = false;
+let chatHistory = [];
+let isLoading = false;
+
+// DOM Elements
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const signinOverlay = document.getElementById('signin-overlay');
+const quickActions = document.getElementById('quick-actions');
+
 // Navigation
-const navBtns = document.querySelectorAll('.nav-btn');
-const views = document.querySelectorAll('.view');
-
-navBtns.forEach(btn => {
+document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
-
-        // Update buttons
-        navBtns.forEach(b => b.classList.remove('active'));
+        const view = btn.dataset.view;
+        
+        // Update nav
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
+        
         // Update views
-        views.forEach(v => v.classList.remove('active'));
-        document.getElementById(`${tab}-view`).classList.add('active');
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(`${view}-view`).classList.add('active');
+        
+        // Load data for view
+        if (isAuthenticated) {
+            if (view === 'files') loadFiles();
+            if (view === 'mail') loadMail();
+            if (view === 'tasks') loadTasks();
+        }
     });
 });
 
-// API Client
-async function fetchData(endpoint) {
-    try {
-        // Map 'drive' to 'files' and 'gmail' to 'messages' to match server routes
-        const route = endpoint === 'drive' ? 'files' : endpoint === 'gmail' ? 'messages' : endpoint;
-        const res = await fetch(`/api/${route}`, {
-            credentials: 'include' // Include cookies for session
-        });
-        
-        // Handle 401 Unauthorized - show sign-in prompt instead of redirecting
-        if (res.status === 401) {
-            showSignInPrompt();
-            return null;
-        }
-        
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return await res.json();
-    } catch (e) {
-        console.error(`Error fetching ${endpoint}:`, e);
-        return null;
-    }
-}
-
-// Check authentication status (non-blocking)
+// Auth Check
 async function checkAuth() {
     try {
-        const res = await fetch('/api/auth/status', {
-            credentials: 'include',
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
+        const res = await fetch('/api/auth/status', { credentials: 'include' });
+        if (!res.ok) return false;
+        
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+            isAuthenticated = true;
+            
+            // Update avatar
+            const avatar = document.getElementById('avatar');
+            if (data.user.picture) {
+                avatar.style.backgroundImage = `url(${data.user.picture})`;
             }
+            
+            signinOverlay.classList.remove('show');
+            return true;
+        }
+    } catch (e) {
+        console.error('Auth check failed:', e);
+    }
+    
+    isAuthenticated = false;
+    signinOverlay.classList.add('show');
+    return false;
+}
+
+// Chat Functions
+async function sendMessage(content) {
+    if (!content.trim() || isLoading) return;
+    
+    // Add user message
+    addMessage('user', content);
+    chatHistory.push({ role: 'user', content });
+    
+    // Clear input
+    chatInput.value = '';
+    autoResize(chatInput);
+    
+    // Show typing indicator
+    const typingEl = showTyping();
+    isLoading = true;
+    sendBtn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                messages: chatHistory,
+                includeContext: true
+            })
         });
         
         if (!res.ok) {
-            updateUserMenu(false);
-            return null;
+            if (res.status === 401) {
+                signinOverlay.classList.add('show');
+                throw new Error('Please sign in to continue');
+            }
+            throw new Error('Failed to get response');
         }
         
         const data = await res.json();
         
-        if (!data.authenticated) {
-            updateUserMenu(false);
-            return null;
-        }
+        // Remove typing indicator
+        typingEl.remove();
         
-        console.log('Authenticated as:', data.user?.email);
+        // Add assistant message
+        addMessage('assistant', data.response);
+        chatHistory.push({ role: 'assistant', content: data.response });
         
-        // Display user info if available
-        if (data.user) {
-            const avatar = document.querySelector('.user-profile .avatar');
-            if (avatar && data.user.picture) {
-                avatar.style.backgroundImage = `url(${data.user.picture})`;
-                avatar.style.backgroundSize = 'cover';
-                avatar.style.backgroundPosition = 'center';
-            }
-        }
-        
-        updateUserMenu(true);
-        return data.user;
-    } catch (e) {
-        console.error('Error checking auth:', e);
-        updateUserMenu(false);
-        return null;
+    } catch (error) {
+        typingEl.remove();
+        addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
+    } finally {
+        isLoading = false;
+        sendBtn.disabled = false;
     }
 }
 
-// Update user menu based on authentication status
-function updateUserMenu(isAuthenticated) {
-    const signInBtn = document.getElementById('sign-in-btn');
-    const signOutBtn = document.getElementById('sign-out-btn');
+function addMessage(role, content) {
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
     
-    if (isAuthenticated) {
-        signInBtn.style.display = 'none';
-        signOutBtn.style.display = 'block';
-    } else {
-        signInBtn.style.display = 'block';
-        signOutBtn.style.display = 'none';
-    }
-}
-
-// Toggle user menu
-function toggleUserMenu() {
-    const menu = document.getElementById('user-menu');
-    menu.classList.toggle('show');
-}
-
-// Close user menu when clicking outside
-function closeUserMenu(event) {
-    const menu = document.getElementById('user-menu');
-    const avatar = document.getElementById('avatar-btn');
+    const avatar = role === 'assistant' ? '◈' : '👤';
     
-    if (menu && avatar && !menu.contains(event.target) && !avatar.contains(event.target)) {
-        menu.classList.remove('show');
-    }
-}
-
-// Show sign-in prompt instead of redirecting
-function showSignInPrompt() {
-    const welcomeCard = document.querySelector('.welcome-card');
-    if (welcomeCard) {
-        welcomeCard.innerHTML = `
-            <h1>Welcome to AI Agent</h1>
-            <p>Sign in with Google to view your Gmail messages and Drive files.</p>
-            <button onclick="window.location.href='/auth/signin'" style="
-                margin-top: 20px;
-                padding: 12px 24px;
-                background: var(--accent-color);
-                color: var(--bg-color);
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: 500;
-                cursor: pointer;
-                transition: transform 0.2s;
-            " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                Sign in with Google
-            </button>
-        `;
-    }
+    // Parse markdown-like formatting
+    const formattedContent = formatMessage(content);
     
-    // Show empty states for files and messages
-    const filesContainer = document.getElementById('dashboard-files');
-    const messagesContainer = document.getElementById('dashboard-messages');
-    if (filesContainer) {
-        filesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#888">Sign in to view your files</div>';
-    }
-    if (messagesContainer) {
-        messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#888">Sign in to view your messages</div>';
-    }
-}
-
-// Render Functions
-function renderFileItem(file) {
-    // Sanitize inputs
-    const safeName = (file.name || '').replace(/[<>&"']/g, c => ({
-        '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-    const safeLink = file.webViewLink || '#';
-
-    return `
-        <a href="${safeLink}" target="_blank" class="list-item" rel="noopener noreferrer">
-            <div class="item-icon">📄</div>
-            <div class="item-details">
-                <div class="item-title">${safeName}</div>
-                <div class="item-subtitle">Google Drive</div>
-            </div>
-        </a>
+    div.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-content">${formattedContent}</div>
     `;
-}
-
-function renderMessageItem(msg) {
-    const subject = msg.payload.headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
-    const from = msg.payload.headers.find(h => h.name === 'From')?.value || 'Unknown';
-
-    // Sanitize inputs
-    const safeSubject = subject.replace(/[<>&"']/g, c => ({
-        '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-    const safeFrom = from.replace(/[<>&"']/g, c => ({
-        '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
-    }[c]));
-
-    return `
-        <a href="https://mail.google.com/mail/u/0/#inbox/${msg.id}" target="_blank" class="list-item" rel="noopener noreferrer">
-            <div class="item-icon">✉️</div>
-            <div class="item-details">
-                <div class="item-title">${safeSubject}</div>
-                <div class="item-subtitle">${safeFrom}</div>
-            </div>
-        </a>
-    `;
-}
-
-// Load Data
-async function loadDrive() {
-    const container = document.getElementById('drive-list');
-    container.innerHTML = '<div class="loading-spinner"></div>';
-
-    const data = await fetchData('drive');
-    // Server returns { files: [...] }
-    const files = data?.files || [];
-
-    if (files.length) {
-        container.innerHTML = files.map(renderFileItem).join('');
-        // Also update dashboard
-        const dashboardContainer = document.getElementById('dashboard-files');
-        if (dashboardContainer) {
-            dashboardContainer.innerHTML = files.slice(0, 5).map(renderFileItem).join('');
-        }
-    } else {
-        const emptyState = '<div style="text-align:center; padding:20px; color:#888">No files found</div>';
-        container.innerHTML = emptyState;
-        const dashboardContainer = document.getElementById('dashboard-files');
-        if (dashboardContainer) {
-            dashboardContainer.innerHTML = emptyState;
-        }
-    }
-}
-
-async function loadGmail() {
-    const container = document.getElementById('gmail-list');
-    container.innerHTML = '<div class="loading-spinner"></div>';
-
-    const data = await fetchData('gmail');
-    // Server returns { messages: [...] }
-    const messages = data?.messages || [];
-
-    if (messages.length) {
-        container.innerHTML = messages.map(renderMessageItem).join('');
-        // Also update dashboard
-        const dashboardContainer = document.getElementById('dashboard-messages');
-        if (dashboardContainer) {
-            dashboardContainer.innerHTML = messages.slice(0, 5).map(renderMessageItem).join('');
-        }
-    } else {
-        const emptyState = '<div style="text-align:center; padding:20px; color:#888">No messages found</div>';
-        container.innerHTML = emptyState;
-        const dashboardContainer = document.getElementById('dashboard-messages');
-        if (dashboardContainer) {
-            dashboardContainer.innerHTML = emptyState;
-        }
-    }
-}
-
-// Initial Load & Event Listeners
-document.addEventListener('DOMContentLoaded', async () => {
-    // Check authentication (non-blocking)
-    const user = await checkAuth();
     
-    if (user) {
-        // User is authenticated - load their data
-        loadDrive();
-        loadGmail();
-    } else {
-        // User is not authenticated - show sign-in prompt
-        showSignInPrompt();
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function formatMessage(text) {
+    // Simple markdown parsing
+    let html = text
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>');
+    
+    // Wrap in paragraph if not already
+    if (!html.startsWith('<')) {
+        html = `<p>${html}</p>`;
     }
+    
+    return html;
+}
 
-    // Avatar click handler
-    const avatarBtn = document.getElementById('avatar-btn');
-    if (avatarBtn) {
-        avatarBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleUserMenu();
-        });
+function showTyping() {
+    const div = document.createElement('div');
+    div.className = 'message assistant';
+    div.innerHTML = `
+        <div class="message-avatar">◈</div>
+        <div class="message-content">
+            <div class="typing-indicator">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
+}
+
+// Quick Actions
+quickActions?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.action-chip');
+    if (!btn || isLoading) return;
+    
+    const action = btn.dataset.action;
+    
+    switch(action) {
+        case 'summary':
+            await getDailySummary();
+            break;
+        case 'tasks':
+            await extractTasks();
+            break;
+        case 'unread':
+            sendMessage('Summarize my unread emails');
+            break;
+        case 'files':
+            sendMessage('Show me my recent files');
+            break;
     }
-
-    // Sign in button handler
-    const signInBtn = document.getElementById('sign-in-btn');
-    if (signInBtn) {
-        signInBtn.addEventListener('click', () => {
-            window.location.href = '/auth/signin';
-        });
-    }
-
-    // Sign out button handler
-    const signOutBtn = document.getElementById('sign-out-btn');
-    if (signOutBtn) {
-        signOutBtn.addEventListener('click', () => {
-            // Navigate to signout endpoint - server will handle redirect
-            window.location.href = '/auth/signout';
-        });
-    }
-
-    // Close menu when clicking outside
-    document.addEventListener('click', closeUserMenu);
-
-    // Bind refresh buttons
-    document.querySelectorAll('.refresh-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const section = e.target.closest('section');
-            if (section.id === 'drive-view') {
-                // Check auth before loading
-                checkAuth().then(user => {
-                    if (user) loadDrive();
-                    else window.location.href = '/auth/signin';
-                });
-            }
-            if (section.id === 'gmail-view') {
-                // Check auth before loading
-                checkAuth().then(user => {
-                    if (user) loadGmail();
-                    else window.location.href = '/auth/signin';
-                });
-            }
-        });
-    });
 });
+
+async function getDailySummary() {
+    const typingEl = showTyping();
+    isLoading = true;
+    
+    try {
+        const res = await fetch('/api/chat/summary', { credentials: 'include' });
+        
+        if (!res.ok) {
+            if (res.status === 401) {
+                signinOverlay.classList.add('show');
+                throw new Error('Please sign in');
+            }
+            throw new Error('Failed to get summary');
+        }
+        
+        const summary = await res.json();
+        typingEl.remove();
+        
+        // Format summary as message
+        let content = `**${summary.greeting}**\n\n`;
+        
+        if (summary.tasks?.length > 0) {
+            content += `📋 **${summary.taskCount} Tasks Found:**\n`;
+            summary.tasks.slice(0, 5).forEach(task => {
+                const priority = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢';
+                content += `${priority} ${task.title}${task.due ? ` (Due: ${task.due})` : ''}\n`;
+            });
+            content += '\n';
+        }
+        
+        if (summary.emailHighlights?.length > 0) {
+            content += `✉️ **Email Highlights:**\n`;
+            summary.emailHighlights.forEach(h => content += `• ${h}\n`);
+            content += '\n';
+        }
+        
+        if (summary.suggestions?.length > 0) {
+            content += `💡 **Suggestions:**\n`;
+            summary.suggestions.forEach(s => content += `• ${s}\n`);
+        }
+        
+        addMessage('assistant', content);
+        
+    } catch (error) {
+        typingEl.remove();
+        addMessage('assistant', `Sorry, I couldn't generate a summary: ${error.message}`);
+    } finally {
+        isLoading = false;
+    }
+}
+
+async function extractTasks() {
+    const typingEl = showTyping();
+    isLoading = true;
+    
+    try {
+        const res = await fetch('/api/chat/tasks', { credentials: 'include' });
+        
+        if (!res.ok) {
+            if (res.status === 401) {
+                signinOverlay.classList.add('show');
+                throw new Error('Please sign in');
+            }
+            throw new Error('Failed to extract tasks');
+        }
+        
+        const data = await res.json();
+        typingEl.remove();
+        
+        if (data.tasks?.length > 0) {
+            let content = `📋 **Found ${data.tasks.length} tasks in your emails:**\n\n`;
+            
+            data.tasks.forEach((task, i) => {
+                const priority = task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢';
+                content += `${i + 1}. ${priority} **${task.title}**\n`;
+                if (task.due) content += `   📅 Due: ${task.due}\n`;
+                if (task.source) content += `   📧 Source: ${task.source}\n`;
+                content += '\n';
+            });
+            
+            addMessage('assistant', content);
+            
+            // Also update tasks view
+            renderTasksList(data.tasks);
+        } else {
+            addMessage('assistant', "I didn't find any tasks in your recent emails. Your inbox looks clear! 🎉");
+        }
+        
+    } catch (error) {
+        typingEl.remove();
+        addMessage('assistant', `Sorry, I couldn't extract tasks: ${error.message}`);
+    } finally {
+        isLoading = false;
+    }
+}
+
+// Tasks View
+async function loadTasks() {
+    const container = document.getElementById('tasks-list');
+    container.innerHTML = '<div class="loading-state"><div class="loader"></div><p>Loading tasks...</p></div>';
+    
+    try {
+        const res = await fetch('/api/chat/tasks', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load tasks');
+        
+        const data = await res.json();
+        renderTasksList(data.tasks || []);
+    } catch (e) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><p>Failed to load tasks</p></div>`;
+    }
+}
+
+function renderTasksList(tasks) {
+    const container = document.getElementById('tasks-list');
+    
+    if (!tasks.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">☑</span>
+                <p>No tasks found</p>
+                <p class="empty-hint">Click "Extract from Emails" to find tasks</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = tasks.map(task => `
+        <div class="task-item">
+            <div class="task-priority ${task.priority}"></div>
+            <div class="task-content">
+                <div class="task-title">${escapeHtml(task.title)}</div>
+                <div class="task-meta">
+                    ${task.due ? `📅 ${task.due}` : ''}
+                    ${task.source ? `• ${escapeHtml(task.source)}` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Files View
+async function loadFiles() {
+    const container = document.getElementById('files-list');
+    container.innerHTML = '<div class="loading-state"><div class="loader"></div><p>Loading files...</p></div>';
+    
+    try {
+        const res = await fetch('/api/files', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load files');
+        
+        const data = await res.json();
+        const files = data.files || [];
+        
+        if (!files.length) {
+            container.innerHTML = '<div class="empty-state"><span class="empty-icon">📁</span><p>No recent files</p></div>';
+            return;
+        }
+        
+        container.innerHTML = files.map(file => `
+            <a href="${file.webViewLink || '#'}" target="_blank" class="file-card" rel="noopener">
+                <div class="file-icon">${getFileIcon(file.mimeType)}</div>
+                <div class="file-info">
+                    <div class="file-name">${escapeHtml(file.name)}</div>
+                    <div class="file-type">${getFileType(file.mimeType)}</div>
+                </div>
+            </a>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span><p>Failed to load files</p></div>';
+    }
+}
+
+function getFileIcon(mimeType) {
+    if (!mimeType) return '📄';
+    if (mimeType.includes('document')) return '📝';
+    if (mimeType.includes('spreadsheet')) return '📊';
+    if (mimeType.includes('presentation')) return '📽️';
+    if (mimeType.includes('image')) return '🖼️';
+    if (mimeType.includes('pdf')) return '📕';
+    if (mimeType.includes('folder')) return '📁';
+    return '📄';
+}
+
+function getFileType(mimeType) {
+    if (!mimeType) return 'File';
+    if (mimeType.includes('document')) return 'Document';
+    if (mimeType.includes('spreadsheet')) return 'Spreadsheet';
+    if (mimeType.includes('presentation')) return 'Presentation';
+    if (mimeType.includes('image')) return 'Image';
+    if (mimeType.includes('pdf')) return 'PDF';
+    if (mimeType.includes('folder')) return 'Folder';
+    return 'File';
+}
+
+// Mail View
+async function loadMail() {
+    const container = document.getElementById('mail-list');
+    container.innerHTML = '<div class="loading-state"><div class="loader"></div><p>Loading messages...</p></div>';
+    
+    try {
+        const res = await fetch('/api/messages', { credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load messages');
+        
+        const data = await res.json();
+        const messages = data.messages || [];
+        
+        if (!messages.length) {
+            container.innerHTML = '<div class="empty-state"><span class="empty-icon">✉️</span><p>No messages</p></div>';
+            return;
+        }
+        
+        container.innerHTML = messages.map(msg => {
+            const subject = msg.payload?.headers?.find(h => h.name === 'Subject')?.value || '(No Subject)';
+            const from = msg.payload?.headers?.find(h => h.name === 'From')?.value || 'Unknown';
+            
+            return `
+                <div class="mail-item">
+                    <span class="mail-icon">✉️</span>
+                    <div class="mail-content">
+                        <div class="mail-subject">${escapeHtml(subject)}</div>
+                        <div class="mail-from">${escapeHtml(from)}</div>
+                    </div>
+                    <button class="mail-action" onclick="summarizeEmail('${msg.id}', this)">
+                        Summarize
+                    </button>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span><p>Failed to load messages</p></div>';
+    }
+}
+
+async function summarizeEmail(emailId, btn) {
+    const originalText = btn.textContent;
+    btn.textContent = '...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/chat/summarize-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ emailId })
+        });
+        
+        if (!res.ok) throw new Error('Failed to summarize');
+        
+        const data = await res.json();
+        
+        // Switch to chat view and show summary
+        document.querySelector('[data-view="chat"]').click();
+        addMessage('assistant', `**Email Summary:**\n\n${data.summary}`);
+        
+    } catch (e) {
+        alert('Failed to summarize email');
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Utility Functions
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[<>&"']/g, c => ({
+        '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Event Listeners
+chatInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage(chatInput.value);
+    }
+});
+
+chatInput?.addEventListener('input', () => autoResize(chatInput));
+
+sendBtn?.addEventListener('click', () => sendMessage(chatInput.value));
+
+document.getElementById('extract-tasks-btn')?.addEventListener('click', extractTasks);
+document.getElementById('refresh-files-btn')?.addEventListener('click', loadFiles);
+document.getElementById('refresh-mail-btn')?.addEventListener('click', loadMail);
+
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+    const authenticated = await checkAuth();
+    
+    if (authenticated) {
+        // Preload data
+        loadFiles();
+        loadMail();
+    }
+});
+
+// Make summarizeEmail global for onclick
+window.summarizeEmail = summarizeEmail;
