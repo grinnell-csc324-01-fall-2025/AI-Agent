@@ -35,13 +35,31 @@ ensureConnection().catch(() => {
 export default async (req: any, res: any) => {
   // Ensure database connection is ready before handling request
   // This is critical for session middleware to work
+  const connectionStartTime = Date.now();
   try {
+    console.log('[Vercel Handler] Ensuring database connection before request...');
     await ensureConnection();
     // Also ensure MongoStore has the client ready
-    await getClientAsync();
+    const client = await getClientAsync();
+    const connectionDuration = Date.now() - connectionStartTime;
+    console.log('[Vercel Handler] Database connection ready:', {
+      duration: connectionDuration,
+      path: req.url,
+    });
+    if (connectionDuration > 5000) {
+      console.warn(
+        '[Vercel Handler] Database connection took longer than 5 seconds',
+      );
+    }
   } catch (err) {
-    console.error('[Vercel Handler] Database connection not ready:', err);
+    const connectionDuration = Date.now() - connectionStartTime;
+    console.error('[Vercel Handler] Database connection not ready:', {
+      error: err,
+      duration: connectionDuration,
+      path: req.url,
+    });
     // Still try to handle request - some routes might work without DB
+    // But session-dependent routes will fail gracefully
   }
   return app(req, res);
 };
