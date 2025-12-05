@@ -88,7 +88,10 @@ export class DatabaseConnection {
         ); // Mask credentials
         console.log(`[Database Connection] Database name: ${dbConfig.dbName}`);
 
-        this.client = new MongoClient(dbConfig.uri, dbConfig.options);
+        if (!this.client) {
+          this.client = new MongoClient(dbConfig.uri, dbConfig.options);
+          this.setupEventListeners();
+        }
 
         // Set connection timeout
         const connectTimeout = dbConfig.options.connectTimeoutMS || 10000;
@@ -116,7 +119,7 @@ export class DatabaseConnection {
         console.log(`[Database Connection] Database: ${dbConfig.dbName}`);
         console.log(`[Database Connection] Ping duration: ${pingDuration}ms`);
 
-        this.setupEventListeners();
+        // this.setupEventListeners(); // Moved to client creation
         return this.db;
       } catch (error) {
         lastError = error as Error;

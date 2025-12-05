@@ -11,6 +11,9 @@ import {UserRepository} from './db/repositories/UserRepository.js';
 
 const app = express();
 
+// Trust proxy is required for secure cookies to work behind Vercel's load balancer
+app.set('trust proxy', 1);
+
 // Session middleware (must be before other middleware that uses sessions)
 // Determine if we're in a secure environment (HTTPS)
 const isSecure =

@@ -22,8 +22,23 @@ authRouter.get('/signin', (req, res) => {
   req.session.oauthState = state;
   req.session.oauthStateTimestamp = Date.now();
 
+  console.log('Starting OAuth flow:', {
+    sessionId: req.sessionID,
+    state: state,
+    timestamp: req.session.oauthStateTimestamp,
+  });
+
   const url = getAuthUrl(state);
-  return res.redirect(url);
+
+  // Manually save session to ensure it persists in Mongo before redirecting (critical for serverless)
+  req.session.save(err => {
+    if (err) {
+      console.error('Session save error during signin:', err);
+      return res.status(500).json({ok: false, error: 'Failed to save session'});
+    }
+    return res.redirect(url);
+  });
+  return;
 });
 
 // Handles the auth redirect and exchanges the code for an access token
@@ -47,6 +62,8 @@ authRouter.get('/callback', async (req, res) => {
       received: state,
       expected: sessionState,
       hasSessionState: !!sessionState,
+      sessionId: req.sessionID,
+      sessionData: JSON.stringify(req.session),
     });
     return res.status(400).json({ok: false, error: 'Invalid state parameter'});
   }
@@ -238,7 +255,17 @@ authRouter.get('/callback', async (req, res) => {
     }
     req.session.userId = user._id.toString();
 
-    return res.redirect('/tabs/personal/index.html');
+    // Manually save session to ensure userId persists before redirecting
+    req.session.save(err => {
+      if (err) {
+        console.error('Session save error during callback:', err);
+        return res
+          .status(500)
+          .json({ok: false, error: 'Failed to save session'});
+      }
+      return res.redirect('/tabs/personal/index.html');
+    });
+    return;
   } catch (e) {
     console.error('OAuth callback error:', e);
     return res.status(500).json({ok: false, error: 'Authentication failed'});
