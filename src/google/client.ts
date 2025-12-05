@@ -1,7 +1,7 @@
-import { Auth, google } from 'googleapis';
-import { config } from '../config.js';
-import { GoogleTokens } from '../db/models/User.js';
-import { UserRepository } from '../db/repositories/UserRepository.js';
+import {Auth, google} from 'googleapis';
+import {config} from '../config.js';
+import {GoogleTokens} from '../db/models/User.js';
+import {UserRepository} from '../db/repositories/UserRepository.js';
 
 export const oauth2Client = new google.auth.OAuth2(
   config.google.clientId,

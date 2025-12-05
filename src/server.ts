@@ -3,11 +3,11 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
-import { router as apiRouter } from './api/router.js';
-import { authRouter } from './auth/authRouter.js';
-import { config } from './config.js';
-import { connect as connectToDatabase, getClientAsync } from './db/connection.js';
-import { UserRepository } from './db/repositories/UserRepository.js';
+import {router as apiRouter} from './api/router.js';
+import {authRouter} from './auth/authRouter.js';
+import {config} from './config.js';
+import {connect as connectToDatabase, getClientAsync} from './db/connection.js';
+import {UserRepository} from './db/repositories/UserRepository.js';
 
 const app = express();
 
@@ -258,5 +258,4 @@ async function startServer() {
   }
 }
 
-export { app, startServer };
-
+export {app, startServer};

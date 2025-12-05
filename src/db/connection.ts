@@ -1,5 +1,5 @@
-import { Db, MongoClient } from 'mongodb';
-import { dbConfig, validateDbConfig } from './config.js';
+import {Db, MongoClient} from 'mongodb';
+import {dbConfig, validateDbConfig} from './config.js';
 
 /**
  * Type guard for error objects that may have code and name properties.

@@ -1,6 +1,6 @@
-import { calendar_v3, google } from 'googleapis';
-import { NormalizedEvent } from '../types/google.js';
-import { getOAuth2ClientForUser } from './client.js';
+import {calendar_v3, google} from 'googleapis';
+import {NormalizedEvent} from '../types/google.js';
+import {getOAuth2ClientForUser} from './client.js';
 
 const RETRYABLE_ERROR_CODES = [429, 500, 503, 504];
 

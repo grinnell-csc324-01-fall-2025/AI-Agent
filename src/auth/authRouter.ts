@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { config } from '../config.js';
-import { GoogleTokens } from '../db/models/User.js';
-import { UserRepository } from '../db/repositories/UserRepository.js';
-import { getAuthUrl, getTokens } from '../google/client.js';
+import {Router} from 'express';
+import {config} from '../config.js';
+import {GoogleTokens} from '../db/models/User.js';
+import {UserRepository} from '../db/repositories/UserRepository.js';
+import {getAuthUrl, getTokens} from '../google/client.js';
 
 export const authRouter = Router();
 

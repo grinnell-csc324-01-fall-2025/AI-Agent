@@ -1,5 +1,5 @@
-import { gmail_v1, google } from 'googleapis';
-import { getOAuth2ClientForUser } from './client.js';
+import {gmail_v1, google} from 'googleapis';
+import {getOAuth2ClientForUser} from './client.js';
 
 const MAX_RETRIES = 3;
 const RETRYABLE_ERROR_CODES = [429, 500, 503, 504];
