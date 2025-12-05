@@ -3,6 +3,18 @@ let isAuthenticated = false;
 let chatHistory = [];
 let isLoading = false;
 
+// Icon helper - returns Lucide icon HTML
+function icon(name, className = '') {
+    return `<i data-lucide="${name}" class="${className}"></i>`;
+}
+
+// Reinitialize icons after dynamic content is added
+function refreshIcons() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
 // DOM Elements
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
@@ -118,7 +130,7 @@ function addMessage(role, content) {
     const div = document.createElement('div');
     div.className = `message ${role}`;
     
-    const avatar = role === 'assistant' ? '◈' : '👤';
+    const avatar = role === 'assistant' ? icon('bot') : icon('user');
     
     // Parse markdown-like formatting
     const formattedContent = formatMessage(content);
@@ -130,6 +142,7 @@ function addMessage(role, content) {
     
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    refreshIcons();
 }
 
 function formatMessage(text) {
@@ -153,7 +166,7 @@ function showTyping() {
     const div = document.createElement('div');
     div.className = 'message assistant';
     div.innerHTML = `
-        <div class="message-avatar">◈</div>
+        <div class="message-avatar">${icon('bot')}</div>
         <div class="message-content">
             <div class="typing-indicator">
                 <span></span><span></span><span></span>
@@ -162,6 +175,7 @@ function showTyping() {
     `;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    refreshIcons();
     return div;
 }
 
@@ -296,7 +310,8 @@ async function loadTasks() {
         const data = await res.json();
         renderTasksList(data.tasks || []);
     } catch (e) {
-        container.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><p>Failed to load tasks</p></div>`;
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('alert-triangle')}</span><p>Failed to load tasks</p></div>`;
+        refreshIcons();
     }
 }
 
@@ -306,11 +321,12 @@ function renderTasksList(tasks) {
     if (!tasks.length) {
         container.innerHTML = `
             <div class="empty-state">
-                <span class="empty-icon">☑</span>
+                <span class="empty-icon">${icon('check-square')}</span>
                 <p>No tasks found</p>
                 <p class="empty-hint">Click "Extract from Emails" to find tasks</p>
             </div>
         `;
+        refreshIcons();
         return;
     }
     
@@ -320,12 +336,13 @@ function renderTasksList(tasks) {
             <div class="task-content">
                 <div class="task-title">${escapeHtml(task.title)}</div>
                 <div class="task-meta">
-                    ${task.due ? `📅 ${task.due}` : ''}
-                    ${task.source ? `• ${escapeHtml(task.source)}` : ''}
+                    ${task.due ? `<span class="task-due">${icon('calendar')} ${task.due}</span>` : ''}
+                    ${task.source ? `<span class="task-source">${icon('mail')} ${escapeHtml(task.source)}</span>` : ''}
                 </div>
             </div>
         </div>
     `).join('');
+    refreshIcons();
 }
 
 // Files View
@@ -341,7 +358,8 @@ async function loadFiles() {
         const files = data.files || [];
         
         if (!files.length) {
-            container.innerHTML = '<div class="empty-state"><span class="empty-icon">📁</span><p>No recent files</p></div>';
+            container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('folder-open')}</span><p>No recent files</p></div>`;
+            refreshIcons();
             return;
         }
         
@@ -354,20 +372,22 @@ async function loadFiles() {
                 </div>
             </a>
         `).join('');
+        refreshIcons();
     } catch (e) {
-        container.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span><p>Failed to load files</p></div>';
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('alert-triangle')}</span><p>Failed to load files</p></div>`;
+        refreshIcons();
     }
 }
 
 function getFileIcon(mimeType) {
-    if (!mimeType) return '📄';
-    if (mimeType.includes('document')) return '📝';
-    if (mimeType.includes('spreadsheet')) return '📊';
-    if (mimeType.includes('presentation')) return '📽️';
-    if (mimeType.includes('image')) return '🖼️';
-    if (mimeType.includes('pdf')) return '📕';
-    if (mimeType.includes('folder')) return '📁';
-    return '📄';
+    if (!mimeType) return icon('file');
+    if (mimeType.includes('document')) return icon('file-text');
+    if (mimeType.includes('spreadsheet')) return icon('file-spreadsheet');
+    if (mimeType.includes('presentation')) return icon('presentation');
+    if (mimeType.includes('image')) return icon('image');
+    if (mimeType.includes('pdf')) return icon('file-text');
+    if (mimeType.includes('folder')) return icon('folder');
+    return icon('file');
 }
 
 function getFileType(mimeType) {
@@ -394,7 +414,8 @@ async function loadMail() {
         const messages = data.messages || [];
         
         if (!messages.length) {
-            container.innerHTML = '<div class="empty-state"><span class="empty-icon">✉️</span><p>No messages</p></div>';
+            container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('inbox')}</span><p>No messages</p></div>`;
+            refreshIcons();
             return;
         }
         
@@ -404,19 +425,21 @@ async function loadMail() {
             
             return `
                 <div class="mail-item">
-                    <span class="mail-icon">✉️</span>
+                    <span class="mail-icon">${icon('mail')}</span>
                     <div class="mail-content">
                         <div class="mail-subject">${escapeHtml(subject)}</div>
                         <div class="mail-from">${escapeHtml(from)}</div>
                     </div>
                     <button class="mail-action" onclick="summarizeEmail('${msg.id}', this)">
-                        Summarize
+                        ${icon('sparkles')} Summarize
                     </button>
                 </div>
             `;
         }).join('');
+        refreshIcons();
     } catch (e) {
-        container.innerHTML = '<div class="empty-state"><span class="empty-icon">⚠️</span><p>Failed to load messages</p></div>';
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('alert-triangle')}</span><p>Failed to load messages</p></div>`;
+        refreshIcons();
     }
 }
 

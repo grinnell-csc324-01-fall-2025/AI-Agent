@@ -454,17 +454,20 @@ authRouter.get('/callback', async (req, res) => {
 
 // Sign out endpoint
 authRouter.get('/signout', (req, res) => {
+  // Clear all auth-related cookies
+  res.clearCookie('connect.sid', {path: '/'});
+  res.clearCookie('oauth_state', {path: '/'});
+  
   if (req.session) {
     req.session.destroy(err => {
       if (err) {
         console.error('Error destroying session:', err);
-        res.status(500).json({ok: false, error: 'Failed to sign out'});
-        return;
+        // Even if session destroy fails, redirect to app (user will see sign-in button)
       }
-      res.clearCookie('connect.sid');
-      res.redirect('/auth/signin');
+      // Redirect to the app homepage, not signin (which would start OAuth flow)
+      res.redirect('/tabs/personal/index.html');
     });
   } else {
-    res.redirect('/auth/signin');
+    res.redirect('/tabs/personal/index.html');
   }
 });

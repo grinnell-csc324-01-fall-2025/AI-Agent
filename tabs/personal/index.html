@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -20,25 +21,25 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <span class="logo-icon">◈</span>
+                <span class="logo-icon"><i data-lucide="bot" class="logo-lucide"></i></span>
                 <span class="logo-text">AGENT</span>
             </div>
             
             <nav class="nav-menu">
                 <button class="nav-item active" data-view="chat">
-                    <span class="nav-icon">⚡</span>
+                    <span class="nav-icon"><i data-lucide="sparkles"></i></span>
                     <span>Chat</span>
                 </button>
                 <button class="nav-item" data-view="tasks">
-                    <span class="nav-icon">☑</span>
+                    <span class="nav-icon"><i data-lucide="list-todo"></i></span>
                     <span>Tasks</span>
                 </button>
                 <button class="nav-item" data-view="files">
-                    <span class="nav-icon">◉</span>
+                    <span class="nav-icon"><i data-lucide="folder-open"></i></span>
                     <span>Files</span>
                 </button>
                 <button class="nav-item" data-view="mail">
-                    <span class="nav-icon">✉</span>
+                    <span class="nav-icon"><i data-lucide="mail"></i></span>
                     <span>Mail</span>
                 </button>
             </nav>
@@ -64,23 +65,23 @@
                     <!-- Quick Actions -->
                     <div class="quick-actions" id="quick-actions">
                         <button class="action-chip" data-action="summary">
-                            <span>📊</span> Daily Briefing
+                            <i data-lucide="bar-chart-3"></i> Daily Briefing
                         </button>
                         <button class="action-chip" data-action="tasks">
-                            <span>📋</span> Extract Tasks
+                            <i data-lucide="clipboard-list"></i> Extract Tasks
                         </button>
                         <button class="action-chip" data-action="unread">
-                            <span>✉️</span> Summarize Unread
+                            <i data-lucide="inbox"></i> Summarize Unread
                         </button>
                         <button class="action-chip" data-action="files">
-                            <span>📁</span> Recent Files
+                            <i data-lucide="folder-search"></i> Recent Files
                         </button>
                     </div>
 
                     <!-- Chat Messages -->
                     <div class="chat-messages" id="chat-messages">
                         <div class="message assistant">
-                            <div class="message-avatar">◈</div>
+                            <div class="message-avatar"><i data-lucide="bot"></i></div>
                             <div class="message-content">
                                 <p>Hello! I'm your AI workspace assistant. I can help you:</p>
                                 <ul>
@@ -103,7 +104,7 @@
                                 rows="1"
                             ></textarea>
                             <button class="send-btn" id="send-btn">
-                                <span>→</span>
+                                <i data-lucide="send"></i>
                             </button>
                         </div>
                         <p class="input-hint">Press Enter to send, Shift+Enter for new line</p>
@@ -116,12 +117,12 @@
                 <div class="view-header">
                     <h1>Tasks</h1>
                     <button class="btn-primary" id="extract-tasks-btn">
-                        <span>🔍</span> Extract from Emails
+                        <i data-lucide="search"></i> Extract from Emails
                     </button>
                 </div>
                 <div class="tasks-container" id="tasks-list">
                     <div class="empty-state">
-                        <span class="empty-icon">☑</span>
+                        <span class="empty-icon"><i data-lucide="check-square"></i></span>
                         <p>No tasks yet</p>
                         <p class="empty-hint">Click "Extract from Emails" to find tasks in your inbox</p>
                     </div>
@@ -132,7 +133,7 @@
             <section id="files-view" class="view">
                 <div class="view-header">
                     <h1>Recent Files</h1>
-                    <button class="btn-secondary" id="refresh-files-btn">↻ Refresh</button>
+                    <button class="btn-secondary" id="refresh-files-btn"><i data-lucide="refresh-cw"></i> Refresh</button>
                 </div>
                 <div class="files-grid" id="files-list">
                     <div class="loading-state">
@@ -146,7 +147,7 @@
             <section id="mail-view" class="view">
                 <div class="view-header">
                     <h1>Gmail</h1>
-                    <button class="btn-secondary" id="refresh-mail-btn">↻ Refresh</button>
+                    <button class="btn-secondary" id="refresh-mail-btn"><i data-lucide="refresh-cw"></i> Refresh</button>
                 </div>
                 <div class="mail-list" id="mail-list">
                     <div class="loading-state">
@@ -159,7 +160,7 @@
             <!-- Sign In Overlay -->
             <div class="signin-overlay" id="signin-overlay">
                 <div class="signin-card">
-                    <div class="signin-icon">◈</div>
+                    <div class="signin-icon"><i data-lucide="bot"></i></div>
                     <h2>Welcome to AI Agent</h2>
                     <p>Connect your Google account to get started</p>
                     <button class="btn-google" onclick="window.location.href='/auth/signin'">
@@ -177,6 +178,10 @@
     </div>
 
     <script src="client.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>

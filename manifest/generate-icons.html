@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Manifest Icons</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        h1 { color: #6366f1; }
+        .icon-container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .icon-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background: #0d0d12;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #2a2a38;
+        }
+        canvas {
+            border-radius: 8px;
+            background: #0d0d12;
+        }
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .info { color: #8888a0; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>AI Agent - Manifest Icon Generator</h1>
+    <p class="info">Click each button to download the PNG icon</p>
+    
+    <div class="icon-container">
+        <div class="icon-box">
+            <h3>Color Icon (192x192)</h3>
+            <canvas id="colorCanvas" width="192" height="192"></canvas>
+            <button onclick="downloadIcon('colorCanvas', 'color.png')">Download color.png</button>
+        </div>
+        
+        <div class="icon-box">
+            <h3>Outline Icon (32x32)</h3>
+            <canvas id="outlineCanvas" width="32" height="32"></canvas>
+            <button onclick="downloadIcon('outlineCanvas', 'outline.png')">Download outline.png</button>
+        </div>
+    </div>
+
+    <script>
+        // Draw Color Icon (192x192)
+        function drawColorIcon() {
+            const canvas = document.getElementById('colorCanvas');
+            const ctx = canvas.getContext('2d');
+            const w = 192, h = 192;
+            
+            // Background
+            ctx.fillStyle = '#0d0d12';
+            roundRect(ctx, 0, 0, w, h, 32);
+            ctx.fill();
+            
+            // Grid pattern
+            ctx.strokeStyle = 'rgba(99, 102, 241, 0.08)';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < w; i += 24) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, h);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(w, i);
+                ctx.stroke();
+            }
+            
+            // Gradient for bot
+            const gradient = ctx.createLinearGradient(52, 60, 140, 132);
+            gradient.addColorStop(0, '#6366f1');
+            gradient.addColorStop(0.5, '#8b5cf6');
+            gradient.addColorStop(1, '#a855f7');
+            
+            // Bot body
+            ctx.fillStyle = gradient;
+            roundRect(ctx, 52, 60, 88, 72, 16);
+            ctx.fill();
+            
+            // Eyes
+            ctx.fillStyle = '#0d0d12';
+            ctx.beginPath();
+            ctx.arc(78, 88, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(114, 88, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Eye highlights
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.beginPath();
+            ctx.arc(82, 84, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(118, 84, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Antenna
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(96, 60);
+            ctx.lineTo(96, 44);
+            ctx.stroke();
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(96, 38, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mouth
+            ctx.fillStyle = '#0d0d12';
+            roundRect(ctx, 76, 108, 40, 8, 4);
+            ctx.fill();
+            
+            // Sparkles
+            ctx.fillStyle = '#a855f7';
+            drawSparkle(ctx, 140, 50, 8);
+            drawSparkle(ctx, 48, 76, 6);
+            drawSparkle(ctx, 150, 100, 5);
+        }
+        
+        // Draw Outline Icon (32x32)
+        function drawOutlineIcon() {
+            const canvas = document.getElementById('outlineCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.strokeStyle = '#6366f1';
+            ctx.fillStyle = '#6366f1';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Body
+            roundRect(ctx, 6, 10, 20, 16, 4);
+            ctx.stroke();
+            
+            // Eyes
+            ctx.beginPath();
+            ctx.arc(11, 17, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(21, 17, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Antenna line
+            ctx.beginPath();
+            ctx.moveTo(16, 10);
+            ctx.lineTo(16, 5);
+            ctx.stroke();
+            
+            // Antenna tip
+            ctx.beginPath();
+            ctx.arc(16, 4, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Mouth
+            ctx.beginPath();
+            ctx.moveTo(12, 22);
+            ctx.lineTo(20, 22);
+            ctx.stroke();
+        }
+        
+        // Helper: Rounded rectangle
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+        
+        // Helper: Draw sparkle
+        function drawSparkle(ctx, x, y, size) {
+            ctx.beginPath();
+            ctx.moveTo(x, y - size);
+            ctx.lineTo(x + size * 0.3, y - size * 0.3);
+            ctx.lineTo(x + size, y);
+            ctx.lineTo(x + size * 0.3, y + size * 0.3);
+            ctx.lineTo(x, y + size);
+            ctx.lineTo(x - size * 0.3, y + size * 0.3);
+            ctx.lineTo(x - size, y);
+            ctx.lineTo(x - size * 0.3, y - size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Download helper
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Initialize
+        drawColorIcon();
+        drawOutlineIcon();
+    </script>
+</body>
+</html>
+

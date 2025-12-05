@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="192" height="192" rx="32" fill="#0d0d12"/>
+  
+  <!-- Subtle grid pattern -->
+  <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+    <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(99, 102, 241, 0.1)" stroke-width="0.5"/>
+  </pattern>
+  <rect width="192" height="192" rx="32" fill="url(#grid)"/>
+  
+  <!-- Bot Icon - Modern AI Agent Symbol -->
+  <g transform="translate(96, 96)" filter="url(#glow)">
+    <!-- Head/Body -->
+    <rect x="-44" y="-36" width="88" height="72" rx="16" fill="url(#gradient)"/>
+    
+    <!-- Eyes -->
+    <circle cx="-18" cy="-8" r="10" fill="#0d0d12"/>
+    <circle cx="18" cy="-8" r="10" fill="#0d0d12"/>
+    
+    <!-- Eye highlights -->
+    <circle cx="-14" cy="-12" r="4" fill="rgba(255,255,255,0.8)"/>
+    <circle cx="22" cy="-12" r="4" fill="rgba(255,255,255,0.8)"/>
+    
+    <!-- Antenna -->
+    <line x1="0" y1="-36" x2="0" y2="-52" stroke="url(#gradient)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="0" cy="-58" r="8" fill="url(#gradient)"/>
+    
+    <!-- Mouth/Speaker -->
+    <rect x="-20" y="12" width="40" height="8" rx="4" fill="#0d0d12"/>
+    
+    <!-- Sparkle accents -->
+    <g fill="#a855f7" opacity="0.9">
+      <polygon points="60,0 64,8 72,8 66,14 68,22 60,17 52,22 54,14 48,8 56,8" transform="translate(-6,-50) scale(0.5)"/>
+      <polygon points="60,0 64,8 72,8 66,14 68,22 60,17 52,22 54,14 48,8 56,8" transform="translate(-100,-20) scale(0.4)"/>
+      <polygon points="60,0 64,8 72,8 66,14 68,22 60,17 52,22 54,14 48,8 56,8" transform="translate(60,-30) scale(0.35)"/>
+    </g>
+  </g>
+</svg>
+
