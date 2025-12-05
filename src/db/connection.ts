@@ -270,6 +270,20 @@ export class DatabaseConnection {
    * Closes the client connection and clears internal state.
    */
   public async disconnect(): Promise<void> {
+    // In serverless environments (Vercel), we want to keep the connection alive
+    // for reuse across invocations. Vercel will freeze the process anyway.
+    const isServerless =
+      process.env.VERCEL ||
+      process.env.VERCEL_ENV ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+    if (isServerless) {
+      console.log(
+        '[Database Connection] Skipping disconnect in serverless environment to preserve connection pooling',
+      );
+      return;
+    }
+
     if (this.client) {
       console.log('Disconnecting from MongoDB...');
       await this.client.close();
