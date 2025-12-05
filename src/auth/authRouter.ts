@@ -291,30 +291,41 @@ authRouter.get('/callback', async (req, res) => {
     req.session.userId = user._id.toString();
 
     // Manually save session to ensure userId persists before redirecting
-    // Use a promise-based approach to ensure the save completes before redirect
+    // Use a promise-based approach with timeout to prevent hanging
     try {
-      await new Promise<void>((resolve, reject) => {
-        req.session.save(err => {
-          if (err) {
-            console.error('Session save error during callback:', {
-              error: err,
-              sessionId: req.sessionID,
-              userId: user._id.toString(),
-            });
-            reject(err);
-          } else {
-            console.log('Session saved successfully during callback:', {
-              sessionId: req.sessionID,
-              userId: user._id.toString(),
-            });
-            resolve();
-          }
-        });
-      });
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          req.session.save(err => {
+            if (err) {
+              console.error('Session save error during callback:', {
+                error: err,
+                sessionId: req.sessionID,
+                userId: user._id.toString(),
+              });
+              reject(err);
+            } else {
+              console.log('Session saved successfully during callback:', {
+                sessionId: req.sessionID,
+                userId: user._id.toString(),
+              });
+              resolve();
+            }
+          });
+        }),
+        new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error('Session save timeout after 5 seconds')),
+            5000,
+          );
+        }),
+      ]);
       return res.redirect('/tabs/personal/index.html');
     } catch (saveError) {
       console.error('Failed to save session during callback:', saveError);
-      return res.status(500).json({ok: false, error: 'Failed to save session'});
+      // Still redirect even if session save fails - user is already authenticated
+      // This prevents the user from being stuck on a timeout
+      console.warn('Redirecting despite session save error - user authenticated');
+      return res.redirect('/tabs/personal/index.html');
     }
   } catch (e) {
     console.error('OAuth callback error:', e);
