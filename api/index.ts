@@ -1,22 +1,47 @@
-import { connect } from '../src/db/connection.js';
+import { connect, getClientAsync } from '../src/db/connection.js';
 import { app } from '../src/server.js';
 
 // Initialize database connection for serverless environment
-// Don't block on connection - let it connect lazily when needed
-// This prevents timeouts during cold starts
-connect().catch(err => {
-  console.error('[Vercel Handler] Initial database connection failed:', err);
-  console.error(
-    '[Vercel Handler] Application will attempt to reconnect on first database access',
-  );
-  console.error(
-    '[Vercel Handler] Database-dependent features may be unavailable until connection succeeds',
-  );
-  // Note: Subsequent requests will attempt to reconnect via getClientAsync(),
-  // but success is not guaranteed if the underlying issue persists
+// Start connection in background but don't block
+let connectionReady = false;
+let connectionPromise: Promise<void> | null = null;
+
+function ensureConnection(): Promise<void> {
+  if (connectionReady) {
+    return Promise.resolve();
+  }
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+  connectionPromise = connect()
+    .then(() => {
+      connectionReady = true;
+      console.log('[Vercel Handler] Database connection ready');
+    })
+    .catch(err => {
+      console.error('[Vercel Handler] Initial database connection failed:', err);
+      connectionReady = false;
+      connectionPromise = null; // Allow retry
+      throw err;
+    });
+  return connectionPromise;
+}
+
+// Start connection attempt in background
+ensureConnection().catch(() => {
+  // Connection failed, will retry on first request
 });
 
 export default async (req: any, res: any) => {
-  // Use the main app - it will handle database connection lazily
+  // Ensure database connection is ready before handling request
+  // This is critical for session middleware to work
+  try {
+    await ensureConnection();
+    // Also ensure MongoStore has the client ready
+    await getClientAsync();
+  } catch (err) {
+    console.error('[Vercel Handler] Database connection not ready:', err);
+    // Still try to handle request - some routes might work without DB
+  }
   return app(req, res);
 };
