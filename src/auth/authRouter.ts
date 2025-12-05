@@ -86,27 +86,29 @@ authRouter.get('/signin', async (req, res) => {
 
   // Also try to save to session as backup (non-blocking)
   if (req.session) {
-    req.session.oauthState = state;
+    req.session.oauthState = signedState; // Store signed state in session too
     req.session.oauthStateTimestamp = timestamp;
     // Don't await - let it save in background
     req.session.save(err => {
       if (err) {
-        console.warn('Session save failed (using cookie fallback):', err);
+        console.warn('Session save failed (using URL state as primary):', err);
       } else {
         console.log('Session saved successfully as backup');
       }
     });
   }
 
-  const url = getAuthUrl(state);
-  console.log('Redirecting to Google OAuth (using cookie-based state)');
+  // Pass signed state to Google - it will be returned in the callback URL
+  // This is the primary verification method (no cookie dependency)
+  const url = getAuthUrl(signedState);
+  console.log('Redirecting to Google OAuth (using URL-based signed state)');
   return res.redirect(url);
 });
 
 // Handles the auth redirect and exchanges the code for an access token
 authRouter.get('/callback', async (req, res) => {
   const code = req.query.code as string;
-  const state = req.query.state as string;
+  const state = req.query.state as string; // This is now the signed state from Google
 
   if (!code) {
     return res.status(400).json({ok: false, error: 'Missing auth code'});
@@ -116,29 +118,51 @@ authRouter.get('/callback', async (req, res) => {
     return res.status(400).json({ok: false, error: 'Missing state parameter'});
   }
 
-  // Try cookie-based state verification first (primary method)
-  const signedStateCookie = req.cookies?.oauth_state;
   let stateValid = false;
   let stateTimestamp: number | undefined;
+  let verificationMethod = 'none';
 
-  if (signedStateCookie) {
-    const verified = verifySignedState(signedStateCookie);
-    if (verified && verified.state === state) {
-      stateValid = true;
-      stateTimestamp = verified.timestamp;
-      console.log('State verified via cookie:', {
-        state: state.substring(0, 8) + '...',
-        timestamp: stateTimestamp,
-      });
-    } else {
-      console.warn('Cookie state verification failed:', {
-        hasVerified: !!verified,
-        stateMatch: verified ? verified.state === state : false,
-      });
+  // PRIMARY METHOD: Verify the signed state directly from the URL parameter
+  // Google returns the exact state we sent, which is now the signed state
+  // This works without cookies - we verify using HMAC signature
+  const urlVerified = verifySignedState(state);
+  if (urlVerified) {
+    stateValid = true;
+    stateTimestamp = urlVerified.timestamp;
+    verificationMethod = 'url-signed-state';
+    console.log('State verified via URL signed state (primary method):', {
+      statePrefix: state.substring(0, 16) + '...',
+      timestamp: stateTimestamp,
+      age: Date.now() - stateTimestamp + 'ms',
+    });
+  }
+
+  // FALLBACK 1: Try cookie-based state verification
+  if (!stateValid) {
+    const signedStateCookie = req.cookies?.oauth_state;
+    if (signedStateCookie) {
+      // Compare cookie with URL state (both should be signed states now)
+      if (signedStateCookie === state) {
+        const cookieVerified = verifySignedState(signedStateCookie);
+        if (cookieVerified) {
+          stateValid = true;
+          stateTimestamp = cookieVerified.timestamp;
+          verificationMethod = 'cookie-match';
+          console.log('State verified via cookie match (fallback 1):', {
+            statePrefix: state.substring(0, 16) + '...',
+            timestamp: stateTimestamp,
+          });
+        }
+      } else {
+        console.warn('Cookie state does not match URL state:', {
+          urlStatePrefix: state.substring(0, 16) + '...',
+          cookieStatePrefix: signedStateCookie.substring(0, 16) + '...',
+        });
+      }
     }
   }
 
-  // Fallback to session-based state verification
+  // FALLBACK 2: Try session-based state verification
   if (!stateValid && req.session) {
     const sessionState = req.session.oauthState;
     const sessionTimestamp = req.session.oauthStateTimestamp;
@@ -146,8 +170,9 @@ authRouter.get('/callback', async (req, res) => {
     if (sessionState && sessionState === state) {
       stateValid = true;
       stateTimestamp = sessionTimestamp;
-      console.log('State verified via session (fallback):', {
-        state: state.substring(0, 8) + '...',
+      verificationMethod = 'session-match';
+      console.log('State verified via session match (fallback 2):', {
+        statePrefix: state.substring(0, 16) + '...',
         timestamp: stateTimestamp,
       });
     }
@@ -161,14 +186,14 @@ authRouter.get('/callback', async (req, res) => {
   }
 
   if (!stateValid) {
-    console.error('State verification failed:', {
-      receivedState: state.substring(0, 8) + '...',
-      hasCookie: !!signedStateCookie,
+    console.error('State verification failed - all methods exhausted:', {
+      receivedStatePrefix: state.substring(0, 16) + '...',
+      receivedStateLength: state.length,
+      urlVerificationResult: urlVerified ? 'valid' : 'invalid/null',
+      hasCookie: !!req.cookies?.oauth_state,
       hasSession: !!req.session,
-      sessionState: req.session?.oauthState
-        ? req.session.oauthState.substring(0, 8) + '...'
-        : 'none',
-      cookies: Object.keys(req.cookies || {}),
+      sessionHasState: !!req.session?.oauthState,
+      cookieKeys: Object.keys(req.cookies || {}),
     });
     return res.status(400).json({ok: false, error: 'Invalid state parameter'});
   }
@@ -180,9 +205,15 @@ authRouter.get('/callback', async (req, res) => {
       timestamp: stateTimestamp,
       tenMinutesAgo,
       age: stateTimestamp ? Date.now() - stateTimestamp : 'unknown',
+      verificationMethod,
     });
     return res.status(400).json({ok: false, error: 'State parameter expired'});
   }
+
+  console.log('OAuth state verification successful:', {
+    method: verificationMethod,
+    age: Date.now() - stateTimestamp + 'ms',
+  });
 
   try {
     // Exchange code for tokens
