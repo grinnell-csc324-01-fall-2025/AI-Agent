@@ -53,6 +53,8 @@ async function checkAuth() {
         const res = await fetch('/api/auth/status', { credentials: 'include' });
         if (!res.ok) {
             updateProfileMenu(false, null);
+            // Don't show overlay - demo mode will display mock data
+            signinOverlay.classList.remove('show');
             return false;
         }
         
@@ -80,7 +82,8 @@ async function checkAuth() {
     isAuthenticated = false;
     currentUser = null;
     updateProfileMenu(false, null);
-    signinOverlay.classList.add('show');
+    // Don't show overlay - demo mode will display mock data
+    signinOverlay.classList.remove('show');
     return false;
 }
 
