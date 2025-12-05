@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { config } from '../config.js';
-import { GoogleTokens } from '../db/models/User.js';
-import { UserRepository } from '../db/repositories/UserRepository.js';
-import { getAuthUrl, getTokens } from '../google/client.js';
+import {Router} from 'express';
+import {config} from '../config.js';
+import {GoogleTokens} from '../db/models/User.js';
+import {UserRepository} from '../db/repositories/UserRepository.js';
+import {getAuthUrl, getTokens} from '../google/client.js';
 
 export const authRouter = Router();
 
@@ -15,7 +15,7 @@ authRouter.get('/signin', (req, res) => {
   if (!req.session) {
     return res
       .status(500)
-      .json({ ok: false, error: 'Session middleware not configured' });
+      .json({ok: false, error: 'Session middleware not configured'});
   }
 
   const state = crypto.randomBytes(32).toString('hex');
@@ -25,7 +25,7 @@ authRouter.get('/signin', (req, res) => {
   console.log('Starting OAuth flow:', {
     sessionId: req.sessionID,
     state: state,
-    timestamp: req.session.oauthStateTimestamp
+    timestamp: req.session.oauthStateTimestamp,
   });
 
   const url = getAuthUrl(state);
@@ -40,7 +40,7 @@ authRouter.get('/callback', async (req, res) => {
   if (!req.session) {
     return res
       .status(500)
-      .json({ ok: false, error: 'Session middleware not configured' });
+      .json({ok: false, error: 'Session middleware not configured'});
   }
 
   // Validate state from session instead of in-memory Map
@@ -54,9 +54,9 @@ authRouter.get('/callback', async (req, res) => {
       expected: sessionState,
       hasSessionState: !!sessionState,
       sessionId: req.sessionID,
-      sessionData: JSON.stringify(req.session)
+      sessionData: JSON.stringify(req.session),
     });
-    return res.status(400).json({ ok: false, error: 'Invalid state parameter' });
+    return res.status(400).json({ok: false, error: 'Invalid state parameter'});
   }
 
   // Check if state is expired (older than 10 minutes)
@@ -70,7 +70,7 @@ authRouter.get('/callback', async (req, res) => {
     // Clear invalid state
     delete req.session.oauthState;
     delete req.session.oauthStateTimestamp;
-    return res.status(400).json({ ok: false, error: 'State parameter expired' });
+    return res.status(400).json({ok: false, error: 'State parameter expired'});
   }
 
   // Clear state from session after validation
@@ -78,7 +78,7 @@ authRouter.get('/callback', async (req, res) => {
   delete req.session.oauthStateTimestamp;
 
   if (!code) {
-    return res.status(400).json({ ok: false, error: 'Missing auth code' });
+    return res.status(400).json({ok: false, error: 'Missing auth code'});
   }
 
   try {
@@ -101,7 +101,7 @@ authRouter.get('/callback', async (req, res) => {
     }
 
     let profile:
-      | { email: string; id: string; name: string; picture?: string }
+      | {email: string; id: string; name: string; picture?: string}
       | undefined;
 
     // Try to get user info from ID token first (if available)
@@ -158,7 +158,7 @@ authRouter.get('/callback', async (req, res) => {
 
       // Create a completely fresh OAuth2 client with the tokens
       // This ensures we have a clean client instance
-      const { google } = await import('googleapis');
+      const {google} = await import('googleapis');
 
       const userInfoClient = new google.auth.OAuth2(
         config.google.clientId,
@@ -183,7 +183,7 @@ authRouter.get('/callback', async (req, res) => {
       console.log(
         'Fetching user info using googleapis oauth2.userinfo.get()...',
       );
-      const oauth2 = google.oauth2({ version: 'v2', auth: userInfoClient });
+      const oauth2 = google.oauth2({version: 'v2', auth: userInfoClient});
 
       const profileResponse = await oauth2.userinfo.get();
       profile = profileResponse.data as {
@@ -249,7 +249,7 @@ authRouter.get('/callback', async (req, res) => {
     return res.redirect('/tabs/personal/index.html');
   } catch (e) {
     console.error('OAuth callback error:', e);
-    return res.status(500).json({ ok: false, error: 'Authentication failed' });
+    return res.status(500).json({ok: false, error: 'Authentication failed'});
   }
 });
 
@@ -259,7 +259,7 @@ authRouter.get('/signout', (req, res) => {
     req.session.destroy(err => {
       if (err) {
         console.error('Error destroying session:', err);
-        res.status(500).json({ ok: false, error: 'Failed to sign out' });
+        res.status(500).json({ok: false, error: 'Failed to sign out'});
         return;
       }
       res.clearCookie('connect.sid');
