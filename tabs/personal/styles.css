@@ -1099,7 +1099,8 @@ body {
 }
 
 /* Demo Notice */
-.mail-demo-notice {
+.mail-demo-notice,
+.files-demo-notice {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1113,8 +1114,14 @@ body {
     color: var(--text-secondary);
 }
 
+.files-demo-notice {
+    grid-column: 1 / -1; /* Span full width in grid */
+}
+
 .mail-demo-notice svg,
-.mail-demo-notice i {
+.mail-demo-notice i,
+.files-demo-notice svg,
+.files-demo-notice i {
     width: 16px;
     height: 16px;
     color: var(--accent);

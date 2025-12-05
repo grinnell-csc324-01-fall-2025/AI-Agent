@@ -3,6 +3,36 @@ import {isConnected} from '../db/connection.js';
 import {UserRepository} from '../db/repositories/UserRepository.js';
 
 /**
+ * Express middleware that makes auth optional.
+ * Sets userId on request if authenticated, otherwise continues without blocking.
+ * Useful for endpoints that can return mock data when not authenticated.
+ */
+export async function optionalAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    // Try to get userId from session
+    if (req.session?.userId) {
+      const userId = req.session.userId;
+      
+      // Validate userId format
+      if (typeof userId === 'string' && userId.length === 24) {
+        // Attach userId to request
+        (req as Request & {userId?: string}).userId = userId;
+      }
+    }
+    
+    // Always continue - endpoints will handle missing userId
+    next();
+  } catch (error) {
+    console.error('[Auth Middleware] Error in optionalAuth:', error);
+    next(); // Continue anyway
+  }
+}
+
+/**
  * Express middleware to require authentication.
  * Checks if user has a valid session with userId.
  * For API requests, returns 401 JSON error.

@@ -457,6 +457,7 @@ async function loadFiles() {
         
         const data = await res.json();
         const files = data.files || [];
+        const isMock = data.mock === true;
         
         if (!files.length) {
             container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('folder-open')}</span><p>No recent files</p></div>`;
@@ -464,7 +465,7 @@ async function loadFiles() {
             return;
         }
         
-        container.innerHTML = files.map(file => `
+        let html = files.map(file => `
             <a href="${file.webViewLink || '#'}" target="_blank" class="file-card" rel="noopener">
                 <div class="file-icon">${getFileIcon(file.mimeType)}</div>
                 <div class="file-info">
@@ -473,8 +474,21 @@ async function loadFiles() {
                 </div>
             </a>
         `).join('');
+        
+        // Add demo notice if using mock data
+        if (isMock) {
+            html += `
+                <div class="files-demo-notice">
+                    ${icon('info')}
+                    <span>Showing demo files. Connect your Google Drive for real files.</span>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
         refreshIcons();
     } catch (e) {
+        console.error('Failed to load files:', e);
         container.innerHTML = `<div class="empty-state"><span class="empty-icon">${icon('alert-triangle')}</span><p>Failed to load files</p></div>`;
         refreshIcons();
     }
@@ -715,11 +729,10 @@ document.getElementById('refresh-mail-btn')?.addEventListener('click', loadMail)
 document.addEventListener('DOMContentLoaded', async () => {
     const authenticated = await checkAuth();
     
-    if (authenticated) {
-        // Preload data
-        loadFiles();
-        loadMail();
-    }
+    // Always preload data - API returns mock data when not authenticated or on error
+    // This ensures the demo works even without signing in
+    loadFiles();
+    loadMail();
 });
 
 // Make functions global for onclick handlers

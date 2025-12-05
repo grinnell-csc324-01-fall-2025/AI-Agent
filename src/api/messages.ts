@@ -1,6 +1,6 @@
 import type {Request, Response} from 'express';
 import {Router} from 'express';
-import {requireAuth} from '../auth/middleware.js';
+import {optionalAuth} from '../auth/middleware.js';
 import {isConnected} from '../db/connection.js';
 import {listMessages} from '../google/gmail.js';
 import {getMockEmails} from '../google/mockEmails.js';
@@ -10,13 +10,30 @@ export const router = Router();
 // GET /api/messages
 // Query params:
 //   - mock=true: Force mock data for demos
+// Note: Uses optionalAuth - returns mock data when not authenticated
 router.get(
   '/',
-  requireAuth,
+  optionalAuth,
   async (req: Request, res: Response): Promise<void> => {
-    const userId = (req as Request & {userId: string}).userId;
+    const userId = (req as Request & {userId?: string}).userId;
     const startTime = Date.now();
     const useMock = req.query.mock === 'true';
+
+    // If not authenticated, return mock data
+    if (!userId) {
+      const mockMessages = getMockEmails();
+      console.log(
+        `[Messages API] [${new Date().toISOString()}] Not authenticated, returning ${mockMessages.length} mock messages`,
+      );
+      res.json({
+        messages: mockMessages,
+        count: mockMessages.length,
+        timestamp: new Date().toISOString(),
+        mock: true,
+        reason: 'not_authenticated',
+      });
+      return;
+    }
 
     // If mock data is explicitly requested, return it immediately
     if (useMock) {
