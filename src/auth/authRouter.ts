@@ -36,9 +36,12 @@ authRouter.get('/signin', async (req, res) => {
   // CRITICAL: OAuth state MUST be saved to session, or OAuth flow will fail
   try {
     await new Promise<void>((resolve, reject) => {
-      let timeoutId: NodeJS.Timeout | undefined;
+      const timeoutId = setTimeout(
+        () => reject(new Error('Session save timeout after 5 seconds')),
+        5000,
+      );
       req.session.save(err => {
-        if (timeoutId) clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
         if (err) {
           console.error('Session save error during signin:', {
             error: err,
@@ -54,10 +57,6 @@ authRouter.get('/signin', async (req, res) => {
           resolve();
         }
       });
-      timeoutId = setTimeout(
-        () => reject(new Error('Session save timeout after 5 seconds')),
-        5000,
-      );
     });
     return res.redirect(url);
   } catch (saveError) {
@@ -296,9 +295,12 @@ authRouter.get('/callback', async (req, res) => {
     // CRITICAL: userId MUST be saved to session, or user will be logged out on next request
     try {
       await new Promise<void>((resolve, reject) => {
-        let timeoutId: NodeJS.Timeout | undefined;
+        const timeoutId = setTimeout(
+          () => reject(new Error('Session save timeout after 5 seconds')),
+          5000,
+        );
         req.session.save(err => {
-          if (timeoutId) clearTimeout(timeoutId);
+          clearTimeout(timeoutId);
           if (err) {
             console.error('Session save error during callback:', {
               error: err,
@@ -314,10 +316,6 @@ authRouter.get('/callback', async (req, res) => {
             resolve();
           }
         });
-        timeoutId = setTimeout(
-          () => reject(new Error('Session save timeout after 5 seconds')),
-          5000,
-        );
       });
       return res.redirect('/tabs/personal/index.html');
     } catch (saveError) {
