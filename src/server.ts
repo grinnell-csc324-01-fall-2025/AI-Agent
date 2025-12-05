@@ -1,3 +1,4 @@
+import MongoStore from 'connect-mongo';
 import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
@@ -5,7 +6,7 @@ import path from 'path';
 import {router as apiRouter} from './api/router.js';
 import {authRouter} from './auth/authRouter.js';
 import {config} from './config.js';
-import {connect as connectToDatabase} from './db/connection.js';
+import {connect as connectToDatabase, getClientAsync} from './db/connection.js';
 import {UserRepository} from './db/repositories/UserRepository.js';
 
 const app = express();
@@ -23,6 +24,12 @@ app.use(
     secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      clientPromise: getClientAsync(),
+      dbName: 'ai-agent-db', // Ensure this matches your DB name
+      ttl: 24 * 60 * 60, // 1 day
+      autoRemove: 'native',
+    }),
     cookie: {
       secure: isSecure, // Use secure cookies in production/HTTPS environments
       httpOnly: true,
