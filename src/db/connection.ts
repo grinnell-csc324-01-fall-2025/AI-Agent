@@ -1,5 +1,5 @@
-import { Db, MongoClient } from 'mongodb';
-import { dbConfig, validateDbConfig } from './config.js';
+import {Db, MongoClient} from 'mongodb';
+import {dbConfig, validateDbConfig} from './config.js';
 
 /**
  * Singleton class managing MongoDB database connections.
@@ -12,7 +12,7 @@ export class DatabaseConnection {
   private isConnecting = false;
   private connectionPromise: Promise<Db> | null = null;
 
-  private constructor() { }
+  private constructor() {}
 
   /**
    * Gets the singleton instance of DatabaseConnection.
