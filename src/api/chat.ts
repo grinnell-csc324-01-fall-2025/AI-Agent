@@ -53,7 +53,7 @@ const requireAuth = (
  * POST /api/chat
  * Chat with the AI agent
  */
-chatRouter.post('/', requireAuth, async (req, res) => {
+chatRouter.post('/', async (req, res) => {
   try {
     const {messages, includeContext} = req.body as {
       messages: Message[];
@@ -116,7 +116,10 @@ chatRouter.post('/', requireAuth, async (req, res) => {
             };
           }
         } catch (contextError) {
-          console.warn('Failed to load real context, using mock data:', contextError);
+          console.warn(
+            'Failed to load real context, using mock data:',
+            contextError,
+          );
           // Fall back to mock data
           context = {
             emails: getMockEmailContext(),
@@ -174,13 +177,53 @@ chatRouter.post('/stream', requireAuth, async (req, res): Promise<void> => {
   }
 });
 
+// Mock tasks for demo mode
+const mockTasks = [
+  {
+    title: 'Finalize Q4 budget proposals',
+    due: 'Friday',
+    priority: 'high',
+    source: 'Email: Q4 Planning Meeting - Action Items',
+  },
+  {
+    title: 'Schedule stakeholder one-on-ones',
+    due: 'Next week',
+    priority: 'medium',
+    source: 'Email: Q4 Planning Meeting - Action Items',
+  },
+  {
+    title: 'Update revised milestones in shared tracker',
+    due: 'This week',
+    priority: 'high',
+    source: 'Email: Project Deadline Extension Request',
+  },
+  {
+    title: 'Review homepage redesign mockups in Figma',
+    due: 'Today',
+    priority: 'medium',
+    source: 'Email: Design Review: Homepage Redesign v2',
+  },
+  {
+    title: 'Confirm offsite attendance and dietary preferences',
+    due: 'Monday EOD',
+    priority: 'low',
+    source: 'Email: Reminder: Team Offsite Next Week',
+  },
+];
+
 /**
  * GET /api/chat/tasks
  * Extract tasks from recent emails
  */
-chatRouter.get('/tasks', requireAuth, async (req, res) => {
+chatRouter.get('/tasks', async (req, res) => {
+  // If not authenticated, return mock tasks for demo
+  if (!req.session?.userId) {
+    console.log('[Tasks API] Not authenticated, returning mock tasks');
+    return res.json({tasks: mockTasks, mock: true});
+  }
+
   try {
-    const client = await getOAuth2ClientForUser(req.session!.userId!);
+    const client = await getOAuth2ClientForUser(req.session.userId);
     const gmail = google.gmail({version: 'v1', auth: client});
 
     // Get recent emails
@@ -236,17 +279,44 @@ chatRouter.get('/tasks', requireAuth, async (req, res) => {
     return res.json({tasks: allTasks});
   } catch (error) {
     console.error('Task extraction error:', error);
-    return res.status(500).json({error: 'Failed to extract tasks'});
+    // Fall back to mock tasks on error
+    console.log('[Tasks API] Gmail API failed, returning mock tasks');
+    return res.json({tasks: mockTasks, mock: true});
   }
 });
+
+// Mock summary for demo mode
+const mockSummary = {
+  greeting: 'Good morning! Here\'s your daily briefing.',
+  taskCount: 5,
+  tasks: mockTasks,
+  emailHighlights: [
+    'Action items from Q4 Planning meeting need attention',
+    'Project deadline extended by 2 weeks - update milestones',
+    'New homepage design mockups ready for review in Figma',
+    'Team offsite scheduled for next Thursday/Friday',
+  ],
+  suggestions: [
+    'Prioritize Q4 budget proposals - due Friday',
+    'Block time to review the homepage redesign',
+    'Confirm offsite attendance by Monday EOD',
+  ],
+  mock: true,
+};
 
 /**
  * GET /api/chat/summary
  * Get daily summary/briefing
  */
-chatRouter.get('/summary', requireAuth, async (req, res) => {
+chatRouter.get('/summary', async (req, res) => {
+  // If not authenticated, return mock summary for demo
+  if (!req.session?.userId) {
+    console.log('[Summary API] Not authenticated, returning mock summary');
+    return res.json(mockSummary);
+  }
+
   try {
-    const client = await getOAuth2ClientForUser(req.session!.userId!);
+    const client = await getOAuth2ClientForUser(req.session.userId);
     const gmail = google.gmail({version: 'v1', auth: client});
     const drive = google.drive({version: 'v3', auth: client});
 
@@ -296,7 +366,9 @@ chatRouter.get('/summary', requireAuth, async (req, res) => {
     return res.json(summary);
   } catch (error) {
     console.error('Summary error:', error);
-    return res.status(500).json({error: 'Failed to generate summary'});
+    // Fall back to mock summary on error
+    console.log('[Summary API] Gmail API failed, returning mock summary');
+    return res.json(mockSummary);
   }
 });
 
