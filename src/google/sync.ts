@@ -19,6 +19,11 @@ export async function syncWorkspace(userId: string): Promise<SyncResult> {
   if (!userId || typeof userId !== 'string') {
     throw new Error('syncWorkspace: userId must be a non-empty string');
   }
+  if (userId.length !== 24) {
+    throw new Error(
+      'syncWorkspace: userId must be a 24-character MongoDB ObjectId',
+    );
+  }
 
   // Fetch from Google using your normalized wrappers
   const [emails, files, events] = await Promise.all([

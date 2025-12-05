@@ -1,4 +1,4 @@
-import {google} from 'googleapis';
+import {google, drive_v3} from 'googleapis';
 import {getOAuth2ClientForUser} from './client.js';
 
 const MAX_RETRIES = 3;
@@ -7,7 +7,7 @@ const RETRYABLE_ERROR_CODES = [429, 500, 503, 504];
 export async function listRecentFiles(
   userId: string,
   retryCount = 0,
-): Promise<any[]> {
+): Promise<drive_v3.Schema$File[]> {
   if (!userId || typeof userId !== 'string' || userId.length !== 24) {
     throw new Error(
       `Invalid userId provided to listRecentFiles: ${userId}. Expected 24-character MongoDB ObjectId.`,
@@ -233,11 +233,11 @@ export async function fetchNormalizedDriveFiles(
 ): Promise<NormalizedDriveFile[]> {
   const rawFiles = await listRecentFiles(userId);
 
-  return rawFiles.map((file: any) => ({
+  return rawFiles.map((file: drive_v3.Schema$File) => ({
     id: file.id ?? '',
     name: file.name ?? '',
     mimeType: file.mimeType ?? '',
     modifiedTime: file.modifiedTime ?? '',
-    webViewLink: file.webViewLink,
+    webViewLink: file.webViewLink ?? undefined,
   }));
 }

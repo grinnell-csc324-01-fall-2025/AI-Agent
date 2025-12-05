@@ -295,10 +295,15 @@ export async function fetchNormalizedEmails(
     snippet: msg.snippet ?? '',
     subject: getHeader(msg, 'Subject') || '(No subject)',
     from: getHeader(msg, 'From'),
-    to: getHeader(msg, 'To')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean),
+    to: (() => {
+      const toHeader = getHeader(msg, 'To');
+      return toHeader
+        ? toHeader
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean)
+        : [];
+    })(),
     date: getHeader(msg, 'Date'),
   }));
 }
