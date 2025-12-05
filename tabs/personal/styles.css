@@ -211,6 +211,115 @@ body {
     color: var(--success);
 }
 
+.user-status.offline {
+    color: var(--text-muted);
+}
+
+/* Profile Dropdown Menu */
+.profile-menu {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    width: 240px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.profile-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+}
+
+.profile-menu-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--gradient-1), var(--gradient-3));
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+.profile-menu-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-menu-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-menu-email {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-menu-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 12px;
+}
+
+.profile-menu-items {
+    padding: 8px;
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    border: none;
+    background: none;
+    width: 100%;
+    font-family: inherit;
+}
+
+.profile-menu-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.profile-menu-item.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.profile-menu-item svg,
+.profile-menu-item i {
+    width: 18px;
+    height: 18px;
+}
+
 /* Main Content */
 .main-content {
     flex: 1;

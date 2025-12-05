@@ -44,21 +44,31 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     });
 });
 
+// Current user data
+let currentUser = null;
+
 // Auth Check
 async function checkAuth() {
     try {
         const res = await fetch('/api/auth/status', { credentials: 'include' });
-        if (!res.ok) return false;
+        if (!res.ok) {
+            updateProfileMenu(false, null);
+            return false;
+        }
         
         const data = await res.json();
         if (data.authenticated && data.user) {
             isAuthenticated = true;
+            currentUser = data.user;
             
             // Update avatar
             const avatar = document.getElementById('avatar');
             if (data.user.picture) {
                 avatar.style.backgroundImage = `url(${data.user.picture})`;
             }
+            
+            // Update profile menu
+            updateProfileMenu(true, data.user);
             
             signinOverlay.classList.remove('show');
             return true;
@@ -68,9 +78,100 @@ async function checkAuth() {
     }
     
     isAuthenticated = false;
+    currentUser = null;
+    updateProfileMenu(false, null);
     signinOverlay.classList.add('show');
     return false;
 }
+
+// Profile Menu Functions
+function toggleProfileMenu() {
+    const menu = document.getElementById('profile-menu');
+    menu.classList.toggle('show');
+}
+
+function closeProfileMenu() {
+    const menu = document.getElementById('profile-menu');
+    menu.classList.remove('show');
+}
+
+function updateProfileMenu(authenticated, user) {
+    const menuAvatar = document.getElementById('profile-menu-avatar');
+    const menuName = document.getElementById('profile-menu-name');
+    const menuEmail = document.getElementById('profile-menu-email');
+    const menuItems = document.getElementById('profile-menu-items');
+    const userStatus = document.getElementById('user-status');
+    
+    if (authenticated && user) {
+        // Signed in state
+        if (user.picture) {
+            menuAvatar.style.backgroundImage = `url(${user.picture})`;
+        }
+        menuName.textContent = user.name || 'User';
+        menuEmail.textContent = user.email || '';
+        userStatus.classList.remove('offline');
+        
+        menuItems.innerHTML = `
+            <button class="profile-menu-item" onclick="viewProfile()">
+                ${icon('user')} View Profile
+            </button>
+            <button class="profile-menu-item" onclick="openSettings()">
+                ${icon('settings')} Settings
+            </button>
+            <div class="profile-menu-divider" style="margin: 8px 0;"></div>
+            <button class="profile-menu-item danger" onclick="signOut()">
+                ${icon('log-out')} Sign Out
+            </button>
+        `;
+    } else {
+        // Signed out state
+        menuAvatar.style.backgroundImage = '';
+        menuName.textContent = 'Guest';
+        menuEmail.textContent = 'Not signed in';
+        userStatus.classList.add('offline');
+        
+        menuItems.innerHTML = `
+            <button class="profile-menu-item" onclick="signIn()">
+                ${icon('log-in')} Sign In with Google
+            </button>
+        `;
+    }
+    
+    refreshIcons();
+}
+
+function signIn() {
+    closeProfileMenu();
+    window.location.href = '/auth/signin';
+}
+
+function signOut() {
+    closeProfileMenu();
+    window.location.href = '/auth/signout';
+}
+
+function viewProfile() {
+    closeProfileMenu();
+    // For now, just show an alert
+    if (currentUser) {
+        alert(`Profile\n\nName: ${currentUser.name}\nEmail: ${currentUser.email}`);
+    }
+}
+
+function openSettings() {
+    closeProfileMenu();
+    alert('Settings coming soon!');
+}
+
+// Close profile menu when clicking outside
+document.addEventListener('click', (e) => {
+    const profileMenu = document.getElementById('profile-menu');
+    const avatar = document.getElementById('avatar');
+    
+    if (profileMenu && !profileMenu.contains(e.target) && e.target !== avatar) {
+        closeProfileMenu();
+    }
+});
 
 // Chat Functions
 async function sendMessage(content) {
@@ -626,3 +727,9 @@ window.summarizeEmail = summarizeEmail;
 window.toggleStar = toggleStar;
 window.archiveEmail = archiveEmail;
 window.deleteEmail = deleteEmail;
+window.toggleProfileMenu = toggleProfileMenu;
+window.closeProfileMenu = closeProfileMenu;
+window.signIn = signIn;
+window.signOut = signOut;
+window.viewProfile = viewProfile;
+window.openSettings = openSettings;

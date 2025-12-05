@@ -46,8 +46,23 @@
 
             <div class="sidebar-footer">
                 <div class="user-profile" id="user-profile">
-                    <div class="avatar" id="avatar"></div>
-                    <span class="user-status">●</span>
+                    <div class="avatar" id="avatar" onclick="toggleProfileMenu()"></div>
+                    <span class="user-status" id="user-status">●</span>
+                    
+                    <!-- Profile Dropdown Menu -->
+                    <div class="profile-menu" id="profile-menu">
+                        <div class="profile-menu-header" id="profile-menu-header">
+                            <div class="profile-menu-avatar" id="profile-menu-avatar"></div>
+                            <div class="profile-menu-info">
+                                <div class="profile-menu-name" id="profile-menu-name">Guest</div>
+                                <div class="profile-menu-email" id="profile-menu-email">Not signed in</div>
+                            </div>
+                        </div>
+                        <div class="profile-menu-divider"></div>
+                        <div class="profile-menu-items" id="profile-menu-items">
+                            <!-- Items populated by JS based on auth state -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </aside>
