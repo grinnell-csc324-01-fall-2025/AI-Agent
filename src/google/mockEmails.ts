@@ -9,19 +9,53 @@ import {gmail_v1} from 'googleapis';
 // Helper to create a Gmail-like message structure
 function createMockMessage(
   id: string,
-  createMockMessage(
-    'mock_021',
-    'thread_021',
-    'Your favorite streamer just went live',
-    'Twitch <no-reply@twitch.tv>',
-    'senior.student@grinnell.edu',
-    'Heads up! KaiNova is live now with a new AI speedrun challenge. Join to vote on prompts, drop emotes, and catch the first 10 minutes for exclusive sub-only VOD access...',
-    hoursAgo(1),
-    true,
-    false,
-  ),
-];
-  ),
+  threadId: string,
+  subject: string,
+  from: string,
+  to: string,
+  snippet: string,
+  date: Date,
+  isUnread = false,
+  isStarred = false,
+): gmail_v1.Schema$Message {
+  const dateStr = date.toUTCString();
+  const labels = ['INBOX'];
+  if (isUnread) labels.push('UNREAD');
+  if (isStarred) labels.push('STARRED');
+
+  return {
+    id,
+    threadId,
+    labelIds: labels,
+    snippet,
+    payload: {
+      headers: [
+        {name: 'Subject', value: subject},
+        {name: 'From', value: from},
+        {name: 'To', value: to},
+        {name: 'Date', value: dateStr},
+      ],
+      mimeType: 'text/plain',
+      body: {
+        data: Buffer.from(snippet).toString('base64'),
+      },
+    },
+    internalDate: date.getTime().toString(),
+  };
+}
+
+// Generate dates relative to now
+const now = new Date();
+const hoursAgo = (hours: number) =>
+  new Date(now.getTime() - hours * 60 * 60 * 1000);
+const daysAgo = (days: number) =>
+  new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+/**
+ * 21 realistic mock emails for demo purposes
+ * Names reflect diverse backgrounds and inclusive representation
+ */
+export const mockEmails: gmail_v1.Schema$Message[] = [
   createMockMessage(
     'mock_008',
     'thread_008',
