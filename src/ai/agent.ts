@@ -6,17 +6,14 @@
 export function respondToPrompt(prompt: string): string {
   const lowerPrompt = prompt.trim().toLowerCase();
 
-  // Check for time-related queries
   if (
     lowerPrompt.includes('what is the time') ||
     lowerPrompt.includes('current time') ||
     lowerPrompt.includes('time right now')
   ) {
-    // Get current time in Central Time (America/Chicago timezone)
-    // This automatically handles CST (UTC-6) and CDT (UTC-5) transitions
     const now = new Date();
     try {
-      const centralTime = now.toLocaleString('en-US', {
+      const centralTimeStr = now.toLocaleString('en-US', {
         timeZone: 'America/Chicago',
         hour: '2-digit',
         minute: '2-digit',
@@ -26,17 +23,39 @@ export function respondToPrompt(prompt: string): string {
         month: '2-digit',
         day: '2-digit',
       });
-      return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
-    } catch {
-      // Fallback: Best-effort approximation of Central Time
-      // This is a simplified fallback that assumes CST (UTC-6) without DST detection
-      // In practice, toLocaleString with timeZone is widely supported
-      const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-      return `The current time is approximately ${cst.toISOString().replace('T', ' ').substring(0, 19)} (Central Time estimate).`;
+
+      if (!centralTimeStr || typeof centralTimeStr !== 'string')
+        throw new Error('Invalid time string');
+      return `The current time in Central Time (America/Chicago) is ${centralTimeStr}.`;
+    } catch (err) {
+      // Fallback: best-effort approximation with DST detection
+      const utc = new Date();
+      const year = utc.getUTCFullYear();
+
+      // Compute second Sunday in March
+      const march = new Date(Date.UTC(year, 2, 1));
+      const marchDay = march.getUTCDay();
+      const secondSundayInMarch = 1 + ((7 - marchDay) % 7) + 7;
+      const dstStart = Date.UTC(year, 2, secondSundayInMarch, 2);
+
+      // Compute first Sunday in November
+      const nov = new Date(Date.UTC(year, 10, 1));
+      const novDay = nov.getUTCDay();
+      const firstSundayInNov = 1 + ((7 - novDay) % 7);
+      const dstEnd = Date.UTC(year, 10, firstSundayInNov, 2);
+
+      let offset = -6;
+      const nowUtcMs = utc.getTime();
+      if (nowUtcMs >= dstStart && nowUtcMs < dstEnd) offset = -5;
+
+      const central = new Date(now.getTime() + offset * 60 * 60 * 1000);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const centralTimeStr = `${central.getUTCFullYear()}-${pad(central.getUTCMonth() + 1)}-${pad(central.getUTCDate())} ${pad(central.getUTCHours())}:${pad(central.getUTCMinutes())}:${pad(central.getUTCSeconds())}`;
+
+      return `The current time in Central Time (approximate, UTC${offset}) is ${centralTimeStr}.`;
     }
   }
 
-  // Default fallback
   return "Sorry, I don't understand your prompt.";
 }
 import {createGroq} from '@ai-sdk/groq';

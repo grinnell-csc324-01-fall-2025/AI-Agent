@@ -23,11 +23,12 @@ function createMockMessage(
   if (isUnread) labels.push('UNREAD');
   if (isStarred) labels.push('STARRED');
 
-  return {
+  const message: gmail_v1.Schema$Message = {
     id,
     threadId,
     labelIds: labels,
     snippet,
+    internalDate: String(date.getTime()),
     payload: {
       headers: [
         {name: 'Subject', value: subject},
@@ -35,13 +36,10 @@ function createMockMessage(
         {name: 'To', value: to},
         {name: 'Date', value: dateStr},
       ],
-      mimeType: 'text/plain',
-      body: {
-        data: Buffer.from(snippet).toString('base64'),
-      },
-    },
-    internalDate: date.getTime().toString(),
+    } as any,
   };
+
+  return message;
 }
 
 // Generate dates relative to now
