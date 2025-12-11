@@ -64,6 +64,17 @@ chatRouter.post('/', async (req, res) => {
       return res.status(400).json({error: 'Messages array required'});
     }
 
+    // Check if the latest user message is a time-related prompt
+    const lastUserMsg = messages.slice().reverse().find(m => m.role === 'user');
+    if (lastUserMsg) {
+      // Import here to avoid circular dependency at top
+      const {respondToPrompt} = await import('../ai/agent.js');
+      const timeResponse = respondToPrompt(lastUserMsg.content);
+      if (!timeResponse.startsWith('Sorry')) {
+        return res.json({response: timeResponse});
+      }
+    }
+
     let context: {emails?: string; files?: string} | undefined;
 
     // Optionally include user's email/file context

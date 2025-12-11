@@ -1,3 +1,6 @@
+import {createGroq} from '@ai-sdk/groq';
+import {generateText, streamText} from 'ai';
+
 /**
  * Responds to simple user prompts, such as asking for the current time in CST.
  * @param prompt The user's prompt string.
@@ -8,52 +11,35 @@ export function respondToPrompt(prompt: string): string {
 
   // Check for time-related queries
   if (
-    lowerPrompt.includes("what is the time") ||
-    lowerPrompt.includes("current time") ||
-    lowerPrompt.includes("time right now")
+    lowerPrompt.includes('what time is it') ||
+    lowerPrompt.includes('what is the time') ||
+    lowerPrompt.includes('current time') ||
+    lowerPrompt.includes('time right now')
   ) {
+    // Get current UTC time and convert to CST (Central Standard Time, UTC-6)
     const now = new Date();
-    let centralTimeStr = '';
     try {
-      centralTimeStr = now.toLocaleString("en-US", {
-        timeZone: "America/Chicago",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
+      const centralTime = now.toLocaleString('en-US', {
+        timeZone: 'America/Chicago',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
         hour12: false,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
       });
-      if (typeof centralTimeStr !== 'string' || !centralTimeStr) throw new Error('Invalid time string');
-      return `The current time in Central Time (America/Chicago) is ${centralTimeStr}.`;
-    } catch (err) {
-      // Manual fallback: calculate offset for CST/CDT
-      // America/Chicago is UTC-6 (CST) or UTC-5 (CDT, daylight saving)
-      // We'll approximate DST: March-November is CDT, otherwise CST
-      const month = now.getUTCMonth() + 1; // 1-based
-      const date = now.getUTCDate();
-      let offset = -6; // Default CST
-      // DST in US: 2nd Sunday in March to 1st Sunday in November
-      if (
-        (month > 3 && month < 11) ||
-        (month === 3 && date >= 8) ||
-        (month === 11 && date < 8)
-      ) {
-        offset = -5; // CDT
-      }
-      const central = new Date(now.getTime() + offset * 60 * 60 * 1000);
-      const pad = (n: number) => n.toString().padStart(2, '0');
-      centralTimeStr = `${central.getUTCFullYear()}-${pad(central.getUTCMonth() + 1)}-${pad(central.getUTCDate())} ${pad(central.getUTCHours())}:${pad(central.getUTCMinutes())}:${pad(central.getUTCSeconds())}`;
-      return `The current time in Central Time (approximate, UTC${offset}) is ${centralTimeStr}.`;
+      return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
+    } catch {
+      // Fallback: manually subtract 6 hours for CST
+      const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      return `The current time in Central Standard Time (CST, UTC-6) is ${cst.toISOString().replace('T', ' ').substring(0, 19)}.`;
     }
   }
 
   // Default fallback
   return "Sorry, I don't understand your prompt.";
 }
-import {createGroq} from '@ai-sdk/groq';
-import {generateText, streamText} from 'ai';
 
 // Initialize Groq with free Llama model
 const groq = createGroq({
