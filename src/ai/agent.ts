@@ -16,8 +16,7 @@ export function respondToPrompt(prompt: string): string {
     lowerPrompt.includes('current time') ||
     lowerPrompt.includes('time right now')
   ) {
-    // Get current time in Central Time (America/Chicago timezone)
-    // This automatically handles CST (UTC-6) and CDT (UTC-5) transitions
+    // Get current UTC time and convert to CST (Central Standard Time, UTC-6)
     const now = new Date();
     try {
       const centralTime = now.toLocaleString('en-US', {
@@ -32,11 +31,9 @@ export function respondToPrompt(prompt: string): string {
       });
       return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
     } catch {
-      // Fallback: Best-effort approximation of Central Time
-      // This is a simplified fallback that assumes CST (UTC-6) without DST detection
-      // In practice, toLocaleString with timeZone is widely supported
+      // Fallback: manually subtract 6 hours for CST
       const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-      return `The current time is approximately ${cst.toISOString().replace('T', ' ').substring(0, 19)} (Central Time estimate).`;
+      return `The current time in Central Standard Time (CST, UTC-6) is ${cst.toISOString().replace('T', ' ').substring(0, 19)}.`;
     }
   }
 

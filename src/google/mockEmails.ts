@@ -54,9 +54,41 @@ const daysAgo = (days: number) =>
 /**
  * 21 realistic mock emails for demo purposes
  * Names reflect diverse backgrounds and inclusive representation
- * 11 new emails at the top
  */
 export const mockEmails: gmail_v1.Schema$Message[] = [
+  createMockMessage(
+    'mock_008',
+    'thread_008',
+    'New Comment on Document: "2024 Strategy"',
+    'Google Docs <comments-noreply@google.com>',
+    'me@company.com',
+    'Elena Rodriguez left a comment on "2024 Strategy": "I think we should reconsider the timeline for Phase 2. The current estimate seems optimistic given our resource constraints..."',
+    daysAgo(2),
+    false,
+    false,
+  ),
+  createMockMessage(
+    'mock_009',
+    'thread_009',
+    'Your flight itinerary - Confirmation #ABC123',
+    'United Airlines <noreply@united.com>',
+    'me@company.com',
+    'Your upcoming trip is confirmed! Flight UA 1234 departing San Francisco (SFO) on Dec 15 at 8:30 AM, arriving New York (JFK) at 5:15 PM. Check-in opens 24 hours before departure...',
+    daysAgo(3),
+    false,
+    true, // starred
+  ),
+  createMockMessage(
+    'mock_010',
+    'thread_010',
+    'GitHub: [company/repo] Pull request merged',
+    'Wei Chen <wei.chen@github.com>',
+    'me@company.com',
+    'Merged #847: Fix authentication bug in login flow. This pull request fixes the issue where users were occasionally logged out during session refresh. Changes include updated token handling...',
+    daysAgo(4),
+    false,
+    false,
+  ),
   createMockMessage(
     'mock_011',
     'thread_011',
