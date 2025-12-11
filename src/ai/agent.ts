@@ -1,3 +1,6 @@
+import {createGroq} from '@ai-sdk/groq';
+import {generateText, streamText} from 'ai';
+
 /**
  * Responds to simple user prompts, such as asking for the current time in CST.
  * @param prompt The user's prompt string.
@@ -8,6 +11,7 @@ export function respondToPrompt(prompt: string): string {
 
   // Check for time-related queries
   if (
+    lowerPrompt.includes('what time is it') ||
     lowerPrompt.includes('what is the time') ||
     lowerPrompt.includes('current time') ||
     lowerPrompt.includes('time right now')
@@ -39,8 +43,6 @@ export function respondToPrompt(prompt: string): string {
   // Default fallback
   return "Sorry, I don't understand your prompt.";
 }
-import {createGroq} from '@ai-sdk/groq';
-import {generateText, streamText} from 'ai';
 
 // Initialize Groq with free Llama model
 const groq = createGroq({
