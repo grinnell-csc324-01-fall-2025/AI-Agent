@@ -40,7 +40,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'thread_012',
     'Summer Internship Offer - Grinnell College CS',
     'Camila Duarte <cduarte@northbridge.ai>',
-    'camiladurate@grinnell.edu',
+    'camiladuarte@grinnell.edu',
     'Congratulations! We are excited to extend you a summer internship offer with Northbridge AI. As a senior at Grinnell, you will join our applied research pod working on LLM evaluation tools. The offer letter and next steps are attached...',
     daysAgo(2),
     true,

@@ -8,10 +8,12 @@ export function respondToPrompt(prompt: string): string {
 
   // Check for time-related queries
   if (
-    lowerPrompt.includes("what is the time") ||
-    lowerPrompt.includes("current time") ||
-    lowerPrompt.includes("time right now")
+    lowerPrompt.includes('what is the time') ||
+    lowerPrompt.includes('current time') ||
+    lowerPrompt.includes('time right now')
   ) {
+    // Get current time in Central Time (America/Chicago timezone)
+    // This automatically handles CST (UTC-6) and CDT (UTC-5) transitions
     const now = new Date();
     // Use a robust fallback for environments (like Vercel Edge) that may not support Intl timeZone
     let centralTimeStr = '';
@@ -22,10 +24,15 @@ export function respondToPrompt(prompt: string): string {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
+      const centralTime = now.toLocaleString('en-US', {
+        timeZone: 'America/Chicago',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
         hour12: false,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
       });
       if (typeof centralTimeStr !== 'string' || !centralTimeStr) throw new Error('Invalid time string');
       return `The current time in Central Time (America/Chicago) is ${centralTimeStr}.`;
@@ -48,6 +55,13 @@ export function respondToPrompt(prompt: string): string {
       const pad = (n: number) => n.toString().padStart(2, '0');
       centralTimeStr = `${central.getUTCFullYear()}-${pad(central.getUTCMonth() + 1)}-${pad(central.getUTCDate())} ${pad(central.getUTCHours())}:${pad(central.getUTCMinutes())}:${pad(central.getUTCSeconds())}`;
       return `The current time in Central Time (approximate, UTC${offset}) is ${centralTimeStr}.`;
+      return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
+    } catch {
+      // Fallback: Best-effort approximation of Central Time
+      // This is a simplified fallback that assumes CST (UTC-6) without DST detection
+      // In practice, toLocaleString with timeZone is widely supported
+      const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      return `The current time is approximately ${cst.toISOString().replace('T', ' ').substring(0, 19)} (Central Time estimate).`;
     }
   }
 
