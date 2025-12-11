@@ -1,3 +1,44 @@
+/**
+ * Responds to simple user prompts, such as asking for the current time in CST.
+ * @param prompt The user's prompt string.
+ * @returns A string response from the agent.
+ */
+export function respondToPrompt(prompt: string): string {
+  const lowerPrompt = prompt.trim().toLowerCase();
+
+  // Check for time-related queries
+  if (
+    lowerPrompt.includes('what is the time') ||
+    lowerPrompt.includes('current time') ||
+    lowerPrompt.includes('time right now')
+  ) {
+    // Get current time in Central Time (America/Chicago timezone)
+    // This automatically handles CST (UTC-6) and CDT (UTC-5) transitions
+    const now = new Date();
+    try {
+      const centralTime = now.toLocaleString('en-US', {
+        timeZone: 'America/Chicago',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
+    } catch {
+      // Fallback: Best-effort approximation of Central Time
+      // This is a simplified fallback that assumes CST (UTC-6) without DST detection
+      // In practice, toLocaleString with timeZone is widely supported
+      const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      return `The current time is approximately ${cst.toISOString().replace('T', ' ').substring(0, 19)} (Central Time estimate).`;
+    }
+  }
+
+  // Default fallback
+  return "Sorry, I don't understand your prompt.";
+}
 import {createGroq} from '@ai-sdk/groq';
 import {generateText, streamText} from 'ai';
 
