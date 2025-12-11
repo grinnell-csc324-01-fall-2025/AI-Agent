@@ -12,7 +12,8 @@ export function respondToPrompt(prompt: string): string {
     lowerPrompt.includes('current time') ||
     lowerPrompt.includes('time right now')
   ) {
-    // Get current UTC time and convert to CST (Central Standard Time, UTC-6)
+    // Get current time in Central Time (America/Chicago timezone)
+    // This automatically handles CST (UTC-6) and CDT (UTC-5) transitions
     const now = new Date();
     try {
       const centralTime = now.toLocaleString('en-US', {
@@ -27,9 +28,19 @@ export function respondToPrompt(prompt: string): string {
       });
       return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
     } catch {
-      // Fallback: manually subtract 6 hours for CST
-      const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-      return `The current time in Central Standard Time (CST, UTC-6) is ${cst.toISOString().replace('T', ' ').substring(0, 19)}.`;
+      // Fallback: attempt to estimate Central Time based on UTC offset
+      // Note: This fallback doesn't account for daylight saving time transitions
+      const januaryOffset = new Date(
+        now.getFullYear(),
+        0,
+        1,
+      ).getTimezoneOffset();
+      const julyOffset = new Date(now.getFullYear(), 6, 1).getTimezoneOffset();
+      const isDST =
+        Math.max(januaryOffset, julyOffset) !== now.getTimezoneOffset();
+      const offset = isDST ? 5 : 6; // CDT is UTC-5, CST is UTC-6
+      const ct = new Date(now.getTime() - offset * 60 * 60 * 1000);
+      return `The current time in Central Time is approximately ${ct.toISOString().replace('T', ' ').substring(0, 19)} ${isDST ? '(CDT)' : '(CST)'}.`;
     }
   }
 
