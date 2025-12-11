@@ -48,7 +48,7 @@ export function respondToPrompt(prompt: string): string {
       const nowUtcMs = utc.getTime();
       if (nowUtcMs >= dstStart && nowUtcMs < dstEnd) offset = -5;
 
-      const central = new Date(now.getTime() + offset * 60 * 60 * 1000);
+      const central = new Date(utc.getTime() + offset * 60 * 60 * 1000);
       const pad = (n: number) => n.toString().padStart(2, '0');
       const centralTimeStr = `${central.getUTCFullYear()}-${pad(central.getUTCMonth() + 1)}-${pad(central.getUTCDate())} ${pad(central.getUTCHours())}:${pad(central.getUTCMinutes())}:${pad(central.getUTCSeconds())}`;
 
