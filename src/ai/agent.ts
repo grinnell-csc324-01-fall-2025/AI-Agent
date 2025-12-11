@@ -28,19 +28,11 @@ export function respondToPrompt(prompt: string): string {
       });
       return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
     } catch {
-      // Fallback: estimate Central Time by checking DST status
-      const januaryOffset = new Date(
-        now.getFullYear(),
-        0,
-        1,
-      ).getTimezoneOffset();
-      const julyOffset = new Date(now.getFullYear(), 6, 1).getTimezoneOffset();
-      // In Northern Hemisphere, DST is when offset is smaller (closer to UTC)
-      const isDST =
-        now.getTimezoneOffset() < Math.max(januaryOffset, julyOffset);
-      const offset = isDST ? 5 : 6; // CDT is UTC-5, CST is UTC-6
-      const ct = new Date(now.getTime() - offset * 60 * 60 * 1000);
-      return `The current time in Central Time is approximately ${ct.toISOString().replace('T', ' ').substring(0, 19)} ${isDST ? '(CDT)' : '(CST)'}.`;
+      // Fallback: Best-effort approximation of Central Time
+      // This is a simplified fallback that assumes CST (UTC-6) without DST detection
+      // In practice, toLocaleString with timeZone is widely supported
+      const cst = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      return `The current time is approximately ${cst.toISOString().replace('T', ' ').substring(0, 19)} (Central Time estimate).`;
     }
   }
 
