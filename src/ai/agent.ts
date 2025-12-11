@@ -8,22 +8,22 @@ export function respondToPrompt(prompt: string): string {
 
   // Check for time-related queries
   if (
-    lowerPrompt.includes("what is the time") ||
-    lowerPrompt.includes("current time") ||
-    lowerPrompt.includes("time right now")
+    lowerPrompt.includes('what is the time') ||
+    lowerPrompt.includes('current time') ||
+    lowerPrompt.includes('time right now')
   ) {
     // Get current UTC time and convert to CST (Central Standard Time, UTC-6)
     const now = new Date();
     try {
-      const centralTime = now.toLocaleString("en-US", {
-        timeZone: "America/Chicago",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
+      const centralTime = now.toLocaleString('en-US', {
+        timeZone: 'America/Chicago',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
         hour12: false,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
       });
       return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
     } catch {
