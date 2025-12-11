@@ -90,55 +90,6 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     false,
   ),
   createMockMessage(
-  threadId: string,
-  subject: string,
-  from: string,
-  to: string,
-  snippet: string,
-  date: Date,
-  isUnread = false,
-  isStarred = false,
-): gmail_v1.Schema$Message {
-  const dateStr = date.toUTCString();
-  const labels = ['INBOX'];
-  if (isUnread) labels.push('UNREAD');
-  if (isStarred) labels.push('STARRED');
-
-  return {
-    id,
-    threadId,
-    labelIds: labels,
-    snippet,
-    payload: {
-      headers: [
-        {name: 'Subject', value: subject},
-        {name: 'From', value: from},
-        {name: 'To', value: to},
-        {name: 'Date', value: dateStr},
-      ],
-      mimeType: 'text/plain',
-      body: {
-        data: Buffer.from(snippet).toString('base64'),
-      },
-    },
-    internalDate: date.getTime().toString(),
-  };
-}
-
-// Generate dates relative to now
-const now = new Date();
-const hoursAgo = (hours: number) =>
-  new Date(now.getTime() - hours * 60 * 60 * 1000);
-const daysAgo = (days: number) =>
-  new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-
-/**
- * 21 realistic mock emails for demo purposes
- * Names reflect diverse backgrounds and inclusive representation
- * 11 new emails at the top
- */
-export const mockEmails: gmail_v1.Schema$Message[] = [
-  createMockMessage(
     'mock_011',
     'thread_011',
     'Your package is out for delivery',
