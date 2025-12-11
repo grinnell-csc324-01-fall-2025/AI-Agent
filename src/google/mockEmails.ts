@@ -22,7 +22,40 @@ function createMockMessage(
   const labels = ['INBOX'];
   if (isUnread) labels.push('UNREAD');
   if (isStarred) labels.push('STARRED');
-// 11 new emails at the top
+
+  return {
+    id,
+    threadId,
+    labelIds: labels,
+    snippet,
+    payload: {
+      headers: [
+        {name: 'Subject', value: subject},
+        {name: 'From', value: from},
+        {name: 'To', value: to},
+        {name: 'Date', value: dateStr},
+      ],
+      mimeType: 'text/plain',
+      body: {
+        data: Buffer.from(snippet).toString('base64'),
+      },
+    },
+    internalDate: date.getTime().toString(),
+  };
+}
+
+// Generate dates relative to now
+const now = new Date();
+const hoursAgo = (hours: number) =>
+  new Date(now.getTime() - hours * 60 * 60 * 1000);
+const daysAgo = (days: number) =>
+  new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+/**
+ * 21 realistic mock emails for demo purposes
+ * Names reflect diverse backgrounds and inclusive representation
+ * 11 new emails at the top
+ */
 export const mockEmails: gmail_v1.Schema$Message[] = [
   createMockMessage(
     'mock_011',
@@ -254,38 +287,6 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Merged #847: Fix authentication bug in login flow. This pull request fixes the issue where users were occasionally logged out during session refresh. Changes include updated token handling...',
     daysAgo(4),
     false,
-    false,
-  ),
-];
-    'thread_019',
-    'Your Spotify Student membership renews soon',
-    'Spotify <no-reply@spotify.com>',
-    'senior.student@grinnell.edu',
-    'Heads up: your Spotify Student membership will renew tomorrow for $5.99 plus tax using your saved payment method ending in 1428. If you need to pause or update billing, visit your account page before midnight to avoid the charge...',
-    hoursAgo(7),
-    true,
-    false,
-  ),
-  createMockMessage(
-    'mock_020',
-    'thread_020',
-    'LinkedIn: New message from recruiter',
-    'LinkedIn Notifications <messages-noreply@linkedin.com>',
-    'senior.student@grinnell.edu',
-    'Hi there! I came across your profile and capstone on distributed systems at Grinnell. We are hiring software engineering interns for Summer 2025. Are you open to a quick chat this week? — Maya, Talent at North Loop Labs...',
-    hoursAgo(4),
-    true,
-    true,
-  ),
-  createMockMessage(
-    'mock_021',
-    'thread_021',
-    'Your favorite streamer just went live',
-    'Twitch <no-reply@twitch.tv>',
-    'senior.student@grinnell.edu',
-    'Heads up! KaiNova is live now with a new AI speedrun challenge. Join to vote on prompts, drop emotes, and catch the first 10 minutes for exclusive sub-only VOD access...',
-    hoursAgo(1),
-    true,
     false,
   ),
 ];

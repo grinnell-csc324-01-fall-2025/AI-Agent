@@ -8,6 +8,7 @@ export function respondToPrompt(prompt: string): string {
 
   // Check for time-related queries
   if (
+    lowerPrompt.includes('what time is it') ||
     lowerPrompt.includes('what is the time') ||
     lowerPrompt.includes('current time') ||
     lowerPrompt.includes('time right now')
@@ -15,15 +16,7 @@ export function respondToPrompt(prompt: string): string {
     // Get current time in Central Time (America/Chicago timezone)
     // This automatically handles CST (UTC-6) and CDT (UTC-5) transitions
     const now = new Date();
-    // Use a robust fallback for environments (like Vercel Edge) that may not support Intl timeZone
-    let centralTimeStr = '';
     try {
-      // Try to use Intl API if available
-      centralTimeStr = now.toLocaleString("en-US", {
-        timeZone: "America/Chicago",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
       const centralTime = now.toLocaleString('en-US', {
         timeZone: 'America/Chicago',
         hour: '2-digit',
@@ -34,27 +27,6 @@ export function respondToPrompt(prompt: string): string {
         month: '2-digit',
         day: '2-digit',
       });
-      if (typeof centralTimeStr !== 'string' || !centralTimeStr) throw new Error('Invalid time string');
-      return `The current time in Central Time (America/Chicago) is ${centralTimeStr}.`;
-    } catch (err) {
-      // Manual fallback: calculate offset for CST/CDT
-      // America/Chicago is UTC-6 (CST) or UTC-5 (CDT, daylight saving)
-      // We'll approximate DST: March-November is CDT, otherwise CST
-      const month = now.getUTCMonth() + 1; // 1-based
-      const date = now.getUTCDate();
-      let offset = -6; // Default CST
-      // DST in US: 2nd Sunday in March to 1st Sunday in November
-      if (
-        (month > 3 && month < 11) ||
-        (month === 3 && date >= 8) ||
-        (month === 11 && date < 8)
-      ) {
-        offset = -5; // CDT
-      }
-      const central = new Date(now.getTime() + offset * 60 * 60 * 1000);
-      const pad = (n: number) => n.toString().padStart(2, '0');
-      centralTimeStr = `${central.getUTCFullYear()}-${pad(central.getUTCMonth() + 1)}-${pad(central.getUTCDate())} ${pad(central.getUTCHours())}:${pad(central.getUTCMinutes())}:${pad(central.getUTCSeconds())}`;
-      return `The current time in Central Time (approximate, UTC${offset}) is ${centralTimeStr}.`;
       return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
     } catch {
       // Fallback: Best-effort approximation of Central Time
