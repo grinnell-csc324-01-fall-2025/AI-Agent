@@ -28,16 +28,16 @@ export function respondToPrompt(prompt: string): string {
       });
       return `The current time in Central Time (America/Chicago) is ${centralTime}.`;
     } catch {
-      // Fallback: attempt to estimate Central Time based on UTC offset
-      // Note: This fallback doesn't account for daylight saving time transitions
+      // Fallback: estimate Central Time by checking DST status
       const januaryOffset = new Date(
         now.getFullYear(),
         0,
         1,
       ).getTimezoneOffset();
       const julyOffset = new Date(now.getFullYear(), 6, 1).getTimezoneOffset();
+      // In Northern Hemisphere, DST is when offset is smaller (closer to UTC)
       const isDST =
-        Math.max(januaryOffset, julyOffset) !== now.getTimezoneOffset();
+        now.getTimezoneOffset() < Math.max(januaryOffset, julyOffset);
       const offset = isDST ? 5 : 6; // CDT is UTC-5, CST is UTC-6
       const ct = new Date(now.getTime() - offset * 60 * 60 * 1000);
       return `The current time in Central Time is approximately ${ct.toISOString().replace('T', ' ').substring(0, 19)} ${isDST ? '(CDT)' : '(CST)'}.`;
