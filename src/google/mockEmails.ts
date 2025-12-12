@@ -54,7 +54,8 @@ function createMockMessage(
 /**
  * 21 realistic mock emails for demo purposes
  * Names reflect diverse backgrounds and inclusive representation
- * Ordered with newest emails first (mock_012-021), then original emails (mock_001-010)
+ * Ordered with newest emails first (mock_021, mock_018, mock_020, mock_013, mock_019, 
+ * mock_014, mock_015, mock_011, mock_012, mock_016, mock_017), then original emails (mock_001-010)
  */
 export const mockEmails: gmail_v1.Schema$Message[] = [
   // 11 new emails (newest first)
@@ -187,7 +188,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Priya Sharma <priya.sharma@company.com>',
     'team@company.com',
     "Hi team, Following up on yesterday's Q4 planning session. Here are the key action items we discussed: 1) Finalize budget proposals by Friday, 2) Schedule one-on-ones with stakeholders...",
-    hoursAgo(1),
+    daysAgo(7),
     true, // unread
     true, // starred
   ),
@@ -198,7 +199,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Marcus Johnson <marcus.j@client.org>',
     'me@company.com',
     "Thanks for the update. We've reviewed the timeline and can accommodate the two-week extension. Please ensure the revised milestones are documented in the shared tracker...",
-    hoursAgo(3),
+    daysAgo(8),
     true, // unread
     false,
   ),
@@ -209,7 +210,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Analytics Team <analytics@company.com>',
     'me@company.com',
     'Your weekly performance report is now available. Key highlights: Website traffic increased 23% week-over-week, conversion rate improved to 4.2%, top performing content...',
-    hoursAgo(5),
+    daysAgo(9),
     false,
     false,
   ),
@@ -220,7 +221,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Fatima Al-Hassan <fatima@vendor.io>',
     'accounts@company.com',
     'This email confirms your payment of $2,450.00 for Invoice #INV-2024-0892 has been received and processed. Thank you for your business. Transaction ID: TXN-8847291...',
-    hoursAgo(8),
+    daysAgo(10),
     false,
     false,
   ),
@@ -231,7 +232,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Jordan Rivera <jordan.r@design.co>',
     'me@company.com, design-team@company.com',
     "Hey everyone, I've uploaded the revised homepage mockups to Figma. The main changes include: updated hero section with video background, simplified navigation, new color palette...",
-    hoursAgo(12),
+    daysAgo(11),
     true, // unread
     true, // starred
   ),
@@ -242,7 +243,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Kenji Tanaka <kenji.t@company.com>',
     'all-staff@company.com',
     'Friendly reminder that our team offsite is scheduled for next Thursday and Friday at the Riverside Conference Center. Please confirm your attendance and dietary preferences by EOD Monday...',
-    daysAgo(1),
+    daysAgo(12),
     false,
     false,
   ),
@@ -253,7 +254,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Amara Okonkwo <amara@techpartner.com>',
     'me@company.com',
     "Good question! For the webhook authentication, you'll need to include the API key in the Authorization header. Here's an example: Authorization: Bearer YOUR_API_KEY_HERE. Let me know if you need more details.",
-    daysAgo(1),
+    daysAgo(13),
     false,
     true, // starred
   ),
@@ -264,7 +265,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Google Docs <comments-noreply@google.com>',
     'me@company.com',
     'Elena Rodriguez left a comment on "2024 Strategy": "I think we should reconsider the timeline for Phase 2. The current estimate seems optimistic given our resource constraints..."',
-    daysAgo(2),
+    daysAgo(14),
     false,
     false,
   ),
@@ -275,7 +276,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'United Airlines <noreply@united.com>',
     'me@company.com',
     'Your upcoming trip is confirmed! Flight UA 1234 departing San Francisco (SFO) on Dec 15 at 8:30 AM, arriving New York (JFK) at 5:15 PM. Check-in opens 24 hours before departure...',
-    daysAgo(3),
+    daysAgo(15),
     false,
     true, // starred
   ),
@@ -286,7 +287,7 @@ export const mockEmails: gmail_v1.Schema$Message[] = [
     'Wei Chen <wei.chen@github.com>',
     'me@company.com',
     'Merged #847: Fix authentication bug in login flow. This pull request fixes the issue where users were occasionally logged out during session refresh. Changes include updated token handling...',
-    daysAgo(4),
+    daysAgo(16),
     false,
     false,
   ),
