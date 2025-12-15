@@ -6,7 +6,7 @@ We wanted to decide between a floating Overlay interface and a dedicated Dashboa
 
 ## Prototypes
 
-We created two simple Figma mockups:
+We created two simple Figma mockups with Figma Make:
 
 - **Overlay**: A floating interface meant for quick access while staying in context.
 - **Dashboard**: A dedicated screen with tabs for Gmail and Drive that showed everything in one place.
