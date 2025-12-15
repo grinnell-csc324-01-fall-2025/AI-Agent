@@ -1,6 +1,4 @@
-# Prototyping & Evaluation: Overlay vs Dashboard
-
-## Prototyping
+# Prototyping: Overlay vs Dashboard
 
 ### What design questions did we intend to answer?
 
@@ -32,43 +30,5 @@ From these sessions:
 - The **Dashboard** better supported **sense-making and planning** because it gave a single, centralized view and made it easier to understand and prioritize work.
 
 From this single interview, the prototyping work answered our initial question: **for morning planning when information is scattered across tools, a dedicated Dashboard is a better fit than a floating Overlay.**
-
----
-
-## Evaluation
-
-### What was the design of the user study to evaluate the artifact?
-
-We ran a **short, moderated usability session** with one participant:
-- The participant used **both** prototypes (Overlay and Dashboard).
-- The main task was: **“Plan your morning using this tool”**—deciding what to focus on in their emails and files.
-- We asked them to **think aloud** so we could understand where they were confused or confident.
-
-We evaluated the designs against common usability dimensions:
-- **Learnability**: how quickly the participant understood what each interface was for.
-- **Efficiency**: how easily they could locate and organize the information they needed.
-- **Visibility and organization**: how well the layout surfaced what mattered for planning.
-- **Satisfaction and preference**: which design they liked more and why.
-
-### What were the results of this user study?
-
-The results from this single participant matched what we saw during prototyping:
-- **Overlay**:
-  - Good for **quick, focused checks**, but
-  - Too small and cramped for organizing multiple items; the participant struggled to see the big picture.
-- **Dashboard**:
-  - Better for **centralized planning**; the participant could scan across emails and files and prioritize more confidently.
-  - Felt like a more appropriate “home base” for starting their day.
-
-The participant **preferred the Dashboard** overall because it made morning planning feel clearer and less fragmented.
-
-### What were the main points of future development?
-
-From this evaluation, our main future-development points were:
-- **Double down on the Dashboard** as the primary planning surface for organizing work across tools.
-- **Refine the Overlay** (if kept) for **lightweight, quick actions** rather than full planning.
-- **Iterate on Dashboard information hierarchy** to better highlight the most important emails/files and next actions.
-
-Overall, the evaluation confirmed that the Dashboard is the stronger candidate design for our use case, and it clarified how the Overlay might be positioned as a supporting, not primary, interface.
 
 
